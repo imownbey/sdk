@@ -410,23 +410,14 @@ func TestDeleteRepoScope(t *testing.T) {
 	}
 }
 
-func TestConfigAliases(t *testing.T) {
-	client, err := NewCodeStorage(Options{Name: "acme", Key: testKey})
+func TestConfig(t *testing.T) {
+	client, err := NewClient(Options{Name: "acme", Key: testKey})
 	if err != nil {
 		t.Fatalf("client error: %v", err)
 	}
 	cfg := client.Config()
 	if cfg.Name != "acme" {
 		t.Fatalf("unexpected config")
-	}
-}
-
-func TestAliasConstructors(t *testing.T) {
-	if _, err := NewGitStorage(Options{Name: "acme", Key: testKey}); err != nil {
-		t.Fatalf("NewGitStorage error: %v", err)
-	}
-	if _, err := NewCodeStorage(Options{Name: "acme", Key: testKey}); err != nil {
-		t.Fatalf("NewCodeStorage error: %v", err)
 	}
 }
 

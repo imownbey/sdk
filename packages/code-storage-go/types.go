@@ -481,6 +481,7 @@ type CommitBuilder struct {
 	client  *Client
 	repoID  string
 	sent    bool
+	err     error
 }
 
 // CommitOptions configures commit operations.
@@ -600,8 +601,4 @@ type Client struct {
 	privateKey *ecdsa.PrivateKey
 }
 
-// GitStorage is an alias for Client to mirror SDK naming.
-type GitStorage = Client
 
-// CodeStorage is an alias for Client.
-type CodeStorage = Client

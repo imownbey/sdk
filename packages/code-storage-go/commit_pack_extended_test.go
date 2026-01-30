@@ -42,13 +42,10 @@ func TestCommitPackStreamsMetadataAndChunks(t *testing.T) {
 		t.Fatalf("builder error: %v", err)
 	}
 
-	builder, err = builder.AddFileFromString("docs/readme.md", "# v2.0.1\n- add streaming SDK\n", nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
-	builder, err = builder.DeletePath("docs/old.txt")
-	if err != nil {
-		t.Fatalf("delete path error: %v", err)
+	builder = builder.AddFileFromString("docs/readme.md", "# v2.0.1\n- add streaming SDK\n", nil).
+		DeletePath("docs/old.txt")
+	if err := builder.Err(); err != nil {
+		t.Fatalf("builder error: %v", err)
 	}
 
 	result, err := builder.Send(nil)
@@ -173,10 +170,7 @@ func TestCommitPackIncludesBaseBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder, err = builder.AddFileFromString("docs/base.txt", "hello", nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
+	builder = builder.AddFileFromString("docs/base.txt", "hello", nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -224,10 +218,7 @@ func TestCommitPackIncludesBaseBranchWithoutExpectedHead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder, err = builder.AddFileFromString("docs/base.txt", "hello", nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
+	builder = builder.AddFileFromString("docs/base.txt", "hello", nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -271,10 +262,7 @@ func TestCommitPackIncludesEphemeralFlags(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder, err = builder.AddFileFromString("docs/ephemeral.txt", "hello", nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
+	builder = builder.AddFileFromString("docs/ephemeral.txt", "hello", nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -312,14 +300,8 @@ func TestCommitPackAcceptsReaderSources(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder, err = builder.AddFile("assets/blob.bin", []byte("blob-payload"), nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
-	builder, err = builder.AddFile("assets/stream.bin", strings.NewReader("streamed-payload"), nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
+	builder = builder.AddFile("assets/blob.bin", []byte("blob-payload"), nil).
+		AddFile("assets/stream.bin", strings.NewReader("streamed-payload"), nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -389,10 +371,7 @@ func TestCommitPackSplitsLargePayloads(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder, err = builder.AddFile("large.bin", payload, nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
+	builder = builder.AddFile("large.bin", payload, nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -503,10 +482,7 @@ func TestCommitPackAcceptsBinaryBytes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder, err = builder.AddFile("docs/hola.txt", payload, nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
+	builder = builder.AddFile("docs/hola.txt", payload, nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -551,10 +527,7 @@ func TestCommitPackHonorsTTL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder, err = builder.AddFileFromString("docs/legacy.txt", "legacy ttl content", nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
+	builder = builder.AddFileFromString("docs/legacy.txt", "legacy ttl content", nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -600,10 +573,7 @@ func TestCommitPackReturnsRefUpdateErrorOnFailure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder, err = builder.AddFileFromString("docs/readme.md", "oops", nil)
-	if err != nil {
-		t.Fatalf("add file error: %v", err)
-	}
+	builder = builder.AddFileFromString("docs/readme.md", "oops", nil)
 	_, err = builder.Send(nil)
 	if err == nil {
 		t.Fatalf("expected error")

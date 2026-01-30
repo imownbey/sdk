@@ -61,16 +61,6 @@ func NewClient(options Options) (*Client, error) {
 	return client, nil
 }
 
-// NewGitStorage is an alias for NewClient.
-func NewGitStorage(options Options) (*Client, error) {
-	return NewClient(options)
-}
-
-// NewCodeStorage is an alias for NewClient.
-func NewCodeStorage(options Options) (*Client, error) {
-	return NewClient(options)
-}
-
 // DefaultAPIBaseURL builds the default API base URL for an org.
 func DefaultAPIBaseURL(name string) string {
 	return strings.ReplaceAll(defaultAPIBaseURL, "{{org}}", name)

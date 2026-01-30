@@ -77,18 +77,24 @@ func (b *CommitBuilder) normalize() error {
 }
 
 // AddFile adds a file to the commit.
-func (b *CommitBuilder) AddFile(path string, source interface{}, options *CommitFileOptions) (*CommitBuilder, error) {
+func (b *CommitBuilder) AddFile(path string, source interface{}, options *CommitFileOptions) *CommitBuilder {
+	if b.err != nil {
+		return b
+	}
 	if err := b.ensureNotSent(); err != nil {
-		return nil, err
+		b.err = err
+		return b
 	}
 	normalizedPath, err := normalizePath(path)
 	if err != nil {
-		return nil, err
+		b.err = err
+		return b
 	}
 
 	reader, err := toReader(source)
 	if err != nil {
-		return nil, err
+		b.err = err
+		return b
 	}
 
 	mode := GitFileModeRegular
@@ -103,18 +109,22 @@ func (b *CommitBuilder) AddFile(path string, source interface{}, options *Commit
 		Operation: "upsert",
 		Source:    reader,
 	})
-	return b, nil
+	return b
 }
 
 // AddFileFromString adds a text file.
-func (b *CommitBuilder) AddFileFromString(path string, contents string, options *CommitTextFileOptions) (*CommitBuilder, error) {
+func (b *CommitBuilder) AddFileFromString(path string, contents string, options *CommitTextFileOptions) *CommitBuilder {
+	if b.err != nil {
+		return b
+	}
 	encoding := "utf-8"
 	if options != nil && options.Encoding != "" {
 		encoding = options.Encoding
 	}
 	encoding = strings.ToLower(strings.TrimSpace(encoding))
 	if encoding != "utf8" && encoding != "utf-8" {
-		return nil, errors.New("unsupported encoding: " + encoding)
+		b.err = errors.New("unsupported encoding: " + encoding)
+		return b
 	}
 	if options == nil {
 		return b.AddFile(path, []byte(contents), nil)
@@ -123,24 +133,37 @@ func (b *CommitBuilder) AddFileFromString(path string, contents string, options 
 }
 
 // DeletePath removes a file or directory.
-func (b *CommitBuilder) DeletePath(path string) (*CommitBuilder, error) {
+func (b *CommitBuilder) DeletePath(path string) *CommitBuilder {
+	if b.err != nil {
+		return b
+	}
 	if err := b.ensureNotSent(); err != nil {
-		return nil, err
+		b.err = err
+		return b
 	}
 	normalizedPath, err := normalizePath(path)
 	if err != nil {
-		return nil, err
+		b.err = err
+		return b
 	}
 	b.ops = append(b.ops, commitOperation{
 		Path:      normalizedPath,
 		ContentID: uuid.NewString(),
 		Operation: "delete",
 	})
-	return b, nil
+	return b
+}
+
+// Err returns any error accumulated during builder operations.
+func (b *CommitBuilder) Err() error {
+	return b.err
 }
 
 // Send finalizes the commit.
 func (b *CommitBuilder) Send(ctx context.Context) (CommitResult, error) {
+	if b.err != nil {
+		return CommitResult{}, b.err
+	}
 	if err := b.ensureNotSent(); err != nil {
 		return CommitResult{}, err
 	}

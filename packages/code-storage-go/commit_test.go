@@ -41,8 +41,8 @@ func TestCommitPackRequest(t *testing.T) {
 		t.Fatalf("builder error: %v", err)
 	}
 
-	builder, err = builder.AddFileFromString("README.md", "hello", nil)
-	if err != nil {
+	builder = builder.AddFileFromString("README.md", "hello", nil)
+	if err := builder.Err(); err != nil {
 		t.Fatalf("add file error: %v", err)
 	}
 

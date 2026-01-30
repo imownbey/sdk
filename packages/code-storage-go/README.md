@@ -50,10 +50,7 @@ if err != nil {
 	log.Fatal(err)
 }
 
-builder, err = builder.AddFileFromString("docs/readme.md", "# Updated\n", nil)
-if err != nil {
-	log.Fatal(err)
-}
+builder = builder.AddFileFromString("docs/readme.md", "# Updated\n", nil)
 
 result, err := builder.Send(context.Background())
 if err != nil {
