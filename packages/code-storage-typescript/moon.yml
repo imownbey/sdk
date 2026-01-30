@@ -2,7 +2,7 @@ type: 'library'
 language: 'typescript'
 
 project:
-  name: 'git-storage-sdk-typescript'
+  name: 'code-storage-typescript'
   description: 'Pierre Git Storage SDK for TypeScript'
 
 fileGroups:
