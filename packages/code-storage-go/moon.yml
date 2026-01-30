@@ -12,3 +12,10 @@ tasks:
       - '**/*.go'
       - go.mod
       - go.sum
+
+  test-verbose:
+    command: go test -v ./...
+    inputs:
+      - '**/*.go'
+      - go.mod
+      - go.sum

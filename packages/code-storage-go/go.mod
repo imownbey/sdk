@@ -1,4 +1,4 @@
-module pierre.co/pierre/monorepo/packages/git-storage-sdk-go
+module github.com/pierrecomputer/sdk/packages/code-storage-go
 
 go 1.24.3
 

@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"log"
 
-	storage "pierre.co/pierre/monorepo/packages/git-storage-sdk-go"
+	storage "github.com/pierrecomputer/sdk/packages/code-storage-go"
 )
 
 func main() {
