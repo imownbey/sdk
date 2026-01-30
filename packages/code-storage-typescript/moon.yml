@@ -16,6 +16,20 @@ fileGroups:
     - 'dist/**/*'
 
 tasks:
+  test:
+    command:
+      - 'pnpm'
+      - 'vitest'
+      - 'run'
+    inputs:
+      - '@globs(configInputs)'
+      - '@globs(sourceInputs)'
+      - 'tests/**/*'
+      - 'vitest.config.ts'
+    options:
+      runInCI: true
+      cache: true
+
   build:
     command:
       - 'tsup'
