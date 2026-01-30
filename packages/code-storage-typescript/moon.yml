@@ -2,8 +2,8 @@ type: 'library'
 language: 'typescript'
 
 project:
-  name: 'git-storage-sdk-node'
-  description: 'Pierre Git Storage SDK for external npm publishing'
+  name: 'git-storage-sdk-typescript'
+  description: 'Pierre Git Storage SDK for TypeScript'
 
 fileGroups:
   sourceInputs:

@@ -1,0 +1,1 @@
+{"lastHash":"eba303cb80c6b3b49ce1cc4c61e7640db5fcc9abb36272b24c41f95a01308bec","projects":{"code-storage-go":{"node_index":0,"source":"packages/code-storage-go"},"code-storage-python":{"node_index":1,"source":"packages/code-storage-python"},"code-storage-typescript":{"alias":"@pierre/storage","node_index":2,"source":"packages/code-storage-typescript"}}}

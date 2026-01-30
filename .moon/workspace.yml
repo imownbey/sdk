@@ -1,0 +1,15 @@
+$schema: './cache/schemas/workspace.json'
+
+# Require a specific version of moon while running commands, otherwise fail.
+versionConstraint: '1.38.0'
+
+experiments:
+  actionPipelineV2: true
+
+projects:
+  - 'packages/*'
+
+vcs:
+  manager: 'git'
+  defaultBranch: 'main'
+  provider: 'other'
