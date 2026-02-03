@@ -143,7 +143,7 @@ console.log(text);
 
 // Download repository archive (streaming tar.gz)
 const archiveResp = await repo.getArchiveStream({
-  rev: 'main',
+  ref: 'main',
   includeGlobs: ['README.md'],
   excludeGlobs: ['vendor/**'],
   archivePrefix: 'repo/',
@@ -421,7 +421,7 @@ interface GetFileOptions {
 // getFileStream() returns a standard Fetch Response for streaming bytes
 
 interface ArchiveOptions {
-  rev?: string; // Branch, tag, or commit SHA (defaults to default branch)
+  ref?: string; // Branch, tag, or commit SHA (defaults to default branch)
   includeGlobs?: string[];
   excludeGlobs?: string[];
   archivePrefix?: string;

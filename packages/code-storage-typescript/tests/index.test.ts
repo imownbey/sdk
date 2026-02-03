@@ -351,7 +351,7 @@ describe('GitStorage', () => {
       expect(requestUrl.pathname.endsWith('/repos/archive')).toBe(true);
       const payload = JSON.parse(init?.body as string);
       expect(payload).toEqual({
-        rev: 'main',
+        ref: 'main',
         include_globs: ['README.md'],
         exclude_globs: ['vendor/**'],
         archive: { prefix: 'repo/' },
@@ -367,7 +367,7 @@ describe('GitStorage', () => {
     });
 
     const response = await repo.getArchiveStream({
-      rev: 'main',
+      ref: 'main',
       includeGlobs: ['README.md'],
       excludeGlobs: ['vendor/**'],
       archivePrefix: 'repo/',
@@ -422,7 +422,7 @@ describe('GitStorage', () => {
 
       const body = JSON.parse(String(init?.body ?? '{}'));
       expect(body).toEqual({
-        rev: 'main',
+        ref: 'main',
         paths: ['src/'],
         query: { pattern: 'SEARCHME', case_sensitive: false },
         context: { before: 1, after: 2 },
@@ -478,6 +478,46 @@ describe('GitStorage', () => {
     ]);
     expect(result.nextCursor).toBeUndefined();
     expect(result.hasMore).toBe(false);
+  });
+
+  it('supports legacy grep rev option', async () => {
+    const store = new GitStorage({ name: 'v0', key });
+    const repo = await store.createRepo({ id: 'repo-grep-legacy' });
+
+    mockFetch.mockImplementationOnce((url, init) => {
+      expect(init?.method).toBe('POST');
+      const requestUrl = new URL(url as string);
+      expect(requestUrl.pathname.endsWith('/repos/grep')).toBe(true);
+
+      const body = JSON.parse(String(init?.body ?? '{}'));
+      expect(body).toEqual({
+        ref: 'main',
+        query: { pattern: 'SEARCHME' },
+      });
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: { get: () => null } as any,
+        json: async () => ({
+          query: { pattern: 'SEARCHME', case_sensitive: true },
+          repo: { ref: 'main', commit: 'deadbeef' },
+          matches: [],
+          next_cursor: null,
+          has_more: false,
+        }),
+        text: async () => '',
+      } as any);
+    });
+
+    const result = await repo.grep({
+      rev: 'main',
+      query: { pattern: 'SEARCHME' },
+    });
+
+    expect(result.query.pattern).toBe('SEARCHME');
+    expect(result.repo.ref).toBe('main');
   });
 
   describe('createRepo', () => {

@@ -1,5 +1,6 @@
 """Repository implementation for Pierre Git Storage SDK."""
 
+import warnings
 from datetime import datetime
 from types import TracebackType
 from typing import Any, Callable, Dict, List, Optional
@@ -238,7 +239,7 @@ class RepoImpl:
     async def get_archive_stream(
         self,
         *,
-        rev: Optional[str] = None,
+        ref: Optional[str] = None,
         include_globs: Optional[List[str]] = None,
         exclude_globs: Optional[List[str]] = None,
         archive_prefix: Optional[str] = None,
@@ -247,7 +248,7 @@ class RepoImpl:
         """Get repository archive as streaming response.
 
         Args:
-            rev: Git ref (branch, tag, or commit SHA)
+            ref: Git ref (branch, tag, or commit SHA)
             include_globs: Optional include globs for archived files
             exclude_globs: Optional exclude globs for archived files
             archive_prefix: Optional archive prefix for tar entries
@@ -260,8 +261,8 @@ class RepoImpl:
         jwt = self.generate_jwt(self._id, {"permissions": ["git:read"], "ttl": ttl})
 
         body: Dict[str, Any] = {}
-        if rev and rev.strip():
-            body["rev"] = rev.strip()
+        if ref and ref.strip():
+            body["ref"] = ref.strip()
         if include_globs:
             body["include_globs"] = include_globs
         if exclude_globs:
@@ -841,6 +842,7 @@ class RepoImpl:
         *,
         pattern: str,
         ref: Optional[str] = None,
+        rev: Optional[str] = None,
         paths: Optional[list[str]] = None,
         case_sensitive: Optional[bool] = None,
         file_filters: Optional[Dict[str, Any]] = None,
@@ -854,6 +856,7 @@ class RepoImpl:
         Args:
             pattern: Regex pattern to search for
             ref: Git ref to search (defaults to server-side default branch)
+            rev: Deprecated alias for ref
             paths: Git pathspecs to restrict search
             case_sensitive: Whether search is case-sensitive (default: server default)
             file_filters: Optional filters with include_globs/exclude_globs/extension_filters
@@ -868,6 +871,12 @@ class RepoImpl:
         pattern_clean = pattern.strip()
         if not pattern_clean:
             raise ValueError("grep pattern is required")
+        if rev and rev.strip():
+            warnings.warn(
+                "repo.grep rev is deprecated; use ref instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         ttl_value = ttl or DEFAULT_TOKEN_TTL_SECONDS
         jwt = self.generate_jwt(self._id, {"permissions": ["git:read"], "ttl": ttl_value})
@@ -881,7 +890,9 @@ class RepoImpl:
         if case_sensitive is not None:
             body["query"]["case_sensitive"] = bool(case_sensitive)
         if ref:
-            body["rev"] = ref
+            body["ref"] = ref
+        elif rev:
+            body["ref"] = rev
         if paths:
             body["paths"] = paths
         if file_filters:

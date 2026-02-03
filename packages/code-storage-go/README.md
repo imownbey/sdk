@@ -42,7 +42,7 @@ fmt.Println(url)
 
 ```go
 resp, err := repo.ArchiveStream(context.Background(), storage.ArchiveOptions{
-	Rev:           "main",
+	Ref:           "main",
 	IncludeGlobs:  []string{"README.md"},
 	ExcludeGlobs:  []string{"vendor/**"},
 	ArchivePrefix: "repo/",

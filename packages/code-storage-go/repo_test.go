@@ -78,8 +78,8 @@ func TestGrepRequestBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]interface{}
 		_ = json.NewDecoder(r.Body).Decode(&body)
-		if body["rev"] != "main" {
-			t.Fatalf("expected rev main")
+		if body["ref"] != "main" {
+			t.Fatalf("expected ref main")
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"query":{"pattern":"SEARCH","case_sensitive":false},"repo":{"ref":"main","commit":"deadbeef"},"matches":[],"has_more":false}`))
@@ -95,6 +95,36 @@ func TestGrepRequestBody(t *testing.T) {
 	_, err = repo.Grep(nil, GrepOptions{
 		Ref:   "main",
 		Paths: []string{"src/"},
+		Query: GrepQuery{Pattern: "SEARCH", CaseSensitive: boolPtr(false)},
+	})
+	if err != nil {
+		t.Fatalf("grep error: %v", err)
+	}
+}
+
+func TestGrepRequestLegacyRev(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["ref"] != "main" {
+			t.Fatalf("expected ref main")
+		}
+		if _, ok := body["rev"]; ok {
+			t.Fatalf("expected rev to be omitted when using legacy rev")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"query":{"pattern":"SEARCH","case_sensitive":false},"repo":{"ref":"main","commit":"deadbeef"},"matches":[],"has_more":false}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+
+	_, err = repo.Grep(nil, GrepOptions{
+		Rev:   "main",
 		Query: GrepQuery{Pattern: "SEARCH", CaseSensitive: boolPtr(false)},
 	})
 	if err != nil {
@@ -617,8 +647,8 @@ func TestArchiveStream(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			t.Fatalf("decode payload: %v", err)
 		}
-		if payload.Rev != "main" {
-			t.Fatalf("unexpected rev: %s", payload.Rev)
+		if payload.Ref != "main" {
+			t.Fatalf("unexpected ref: %s", payload.Ref)
 		}
 		if len(payload.IncludeGlobs) != 1 || payload.IncludeGlobs[0] != "README.md" {
 			t.Fatalf("unexpected include globs: %v", payload.IncludeGlobs)
@@ -641,7 +671,7 @@ func TestArchiveStream(t *testing.T) {
 	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
 
 	resp, err := repo.ArchiveStream(nil, ArchiveOptions{
-		Rev:           "main",
+		Ref:           "main",
 		IncludeGlobs:  []string{"README.md"},
 		ExcludeGlobs:  []string{"vendor/**"},
 		ArchivePrefix: "repo/",

@@ -138,7 +138,7 @@ type GetFileOptions struct {
 // ArchiveOptions configures repository archive download.
 type ArchiveOptions struct {
 	InvocationOptions
-	Rev           string
+	Ref           string
 	IncludeGlobs  []string
 	ExcludeGlobs  []string
 	ArchivePrefix string
@@ -372,6 +372,8 @@ type GetCommitDiffResult struct {
 type GrepOptions struct {
 	InvocationOptions
 	Ref         string
+	// Deprecated: use Ref instead.
+	Rev         string
 	Query       GrepQuery
 	Paths       []string
 	FileFilters *GrepFileFilters

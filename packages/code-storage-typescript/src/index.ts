@@ -623,9 +623,9 @@ class RepoImpl implements Repo {
     });
 
     const body: Record<string, unknown> = {};
-    const rev = options.rev?.trim();
-    if (rev) {
-      body.rev = rev;
+    const ref = options.ref?.trim();
+    if (ref) {
+      body.ref = ref;
     }
     if (Array.isArray(options.includeGlobs) && options.includeGlobs.length > 0) {
       body.include_globs = options.includeGlobs;
@@ -989,8 +989,9 @@ class RepoImpl implements Repo {
       },
     };
 
-    if (options.ref) {
-      body.rev = options.ref;
+    const ref = options.ref?.trim() || options.rev?.trim();
+    if (ref) {
+      body.ref = ref;
     }
     if (Array.isArray(options.paths) && options.paths.length > 0) {
       body.paths = options.paths;

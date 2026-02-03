@@ -137,7 +137,7 @@ print(text.decode())
 
 # Download repository archive (streaming tar.gz)
 archive_response = await repo.get_archive_stream(
-    rev="main",
+    ref="main",
     include_globs=["README.md"],
     exclude_globs=["vendor/**"],
     archive_prefix="repo/",
@@ -565,7 +565,7 @@ class Repo:
     async def get_archive_stream(
         self,
         *,
-        rev: Optional[str] = None,
+        ref: Optional[str] = None,
         include_globs: Optional[List[str]] = None,
         exclude_globs: Optional[List[str]] = None,
         archive_prefix: Optional[str] = None,

@@ -117,8 +117,8 @@ func (r *Repo) ArchiveStream(ctx context.Context, options ArchiveOptions) (*http
 	}
 
 	req := archiveRequest{}
-	if rev := strings.TrimSpace(options.Rev); rev != "" {
-		req.Rev = rev
+	if ref := strings.TrimSpace(options.Ref); ref != "" {
+		req.Ref = ref
 	}
 	if len(options.IncludeGlobs) > 0 {
 		req.IncludeGlobs = options.IncludeGlobs
@@ -131,7 +131,7 @@ func (r *Repo) ArchiveStream(ctx context.Context, options ArchiveOptions) (*http
 	}
 
 	var body interface{}
-	if req.Rev != "" || len(req.IncludeGlobs) > 0 || len(req.ExcludeGlobs) > 0 || req.Archive != nil {
+	if req.Ref != "" || len(req.IncludeGlobs) > 0 || len(req.ExcludeGlobs) > 0 || req.Archive != nil {
 		body = req
 	}
 
@@ -521,8 +521,12 @@ func (r *Repo) Grep(ctx context.Context, options GrepOptions) (GrepResult, error
 			CaseSensitive: options.Query.CaseSensitive,
 		},
 	}
-	if options.Ref != "" {
-		body.Rev = options.Ref
+	ref := strings.TrimSpace(options.Ref)
+	if ref == "" {
+		ref = strings.TrimSpace(options.Rev)
+	}
+	if ref != "" {
+		body.Ref = ref
 	}
 	if len(options.Paths) > 0 {
 		body.Paths = options.Paths

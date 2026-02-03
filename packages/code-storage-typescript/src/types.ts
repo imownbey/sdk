@@ -158,7 +158,7 @@ export interface GetFileOptions extends GitStorageInvocationOptions {
 }
 
 export interface ArchiveOptions extends GitStorageInvocationOptions {
-  rev?: string;
+  ref?: string;
   includeGlobs?: string[];
   excludeGlobs?: string[];
   archivePrefix?: string;
@@ -335,6 +335,10 @@ export interface GetCommitDiffResult {
 // Grep API types
 export interface GrepOptions extends GitStorageInvocationOptions {
   ref?: string;
+  /**
+   * @deprecated Use ref instead.
+   */
+  rev?: string;
   paths?: string[];
   query: {
     pattern: string;
