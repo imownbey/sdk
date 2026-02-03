@@ -38,7 +38,7 @@ type authorInfo struct {
 // grepRequest is the JSON body for Grep.
 type grepRequest struct {
 	Query       grepQueryPayload       `json:"query"`
-	Rev         string                 `json:"rev,omitempty"`
+	Ref         string                 `json:"ref,omitempty"`
 	Paths       []string               `json:"paths,omitempty"`
 	FileFilters *grepFileFilterPayload `json:"file_filters,omitempty"`
 	Context     *grepContextPayload    `json:"context,omitempty"`
@@ -75,6 +75,18 @@ type grepPaginationPayload struct {
 // pullUpstreamRequest is the JSON body for PullUpstream.
 type pullUpstreamRequest struct {
 	Ref string `json:"ref,omitempty"`
+}
+
+// archiveRequest is the JSON body for ArchiveStream.
+type archiveRequest struct {
+	Ref          string          `json:"ref,omitempty"`
+	IncludeGlobs []string        `json:"include_globs,omitempty"`
+	ExcludeGlobs []string        `json:"exclude_globs,omitempty"`
+	Archive      *archiveOptions `json:"archive,omitempty"`
+}
+
+type archiveOptions struct {
+	Prefix string `json:"prefix,omitempty"`
 }
 
 // createBranchRequest is the JSON body for CreateBranch.

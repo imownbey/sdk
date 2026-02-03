@@ -255,7 +255,7 @@ uv pip install dist/pierre_storage-0.1.4-py3-none-any.whl
 
 ## Compatibility
 
-- **Python**: 3.8+ (uses TypedDict, Protocol)
+- **Python**: 3.9+ (uses TypedDict, Protocol)
 - **Operating Systems**: All (uses pure Python)
 - **Async Runtime**: asyncio (standard library)
 

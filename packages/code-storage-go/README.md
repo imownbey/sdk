@@ -38,6 +38,21 @@ fmt.Println(url)
 }
 ```
 
+### Download an archive
+
+```go
+resp, err := repo.ArchiveStream(context.Background(), storage.ArchiveOptions{
+	Ref:           "main",
+	IncludeGlobs:  []string{"README.md"},
+	ExcludeGlobs:  []string{"vendor/**"},
+	ArchivePrefix: "repo/",
+})
+if err != nil {
+	log.Fatal(err)
+}
+defer resp.Body.Close()
+```
+
 ### Create a commit
 
 ```go
@@ -66,7 +81,7 @@ TTL fields use `time.Duration` values (for example `time.Hour`).
 
 - Create, list, find, and delete repositories.
 - Generate authenticated git remote URLs.
-- Read files, list branches/commits, and run grep queries.
+- Read files, download archives, list branches/commits, and run grep queries.
 - Create commits via streaming commit-pack or diff-commit endpoints.
 - Restore commits, manage git notes, and create branches.
 - Validate webhook signatures and parse push events.

@@ -135,6 +135,16 @@ response = await repo.get_file_stream(
 text = await response.aread()
 print(text.decode())
 
+# Download repository archive (streaming tar.gz)
+archive_response = await repo.get_archive_stream(
+    ref="main",
+    include_globs=["README.md"],
+    exclude_globs=["vendor/**"],
+    archive_prefix="repo/",
+)
+archive_bytes = await archive_response.aread()
+print(len(archive_bytes))
+
 # List all files in the repository
 files = await repo.list_files(
     ref="main",  # optional, defaults to default branch
@@ -549,6 +559,16 @@ class Repo:
         path: str,
         ref: Optional[str] = None,
         ephemeral: Optional[bool] = None,
+        ttl: Optional[int] = None,
+    ) -> Response: ...
+
+    async def get_archive_stream(
+        self,
+        *,
+        ref: Optional[str] = None,
+        include_globs: Optional[List[str]] = None,
+        exclude_globs: Optional[List[str]] = None,
+        archive_prefix: Optional[str] = None,
         ttl: Optional[int] = None,
     ) -> Response: ...
 

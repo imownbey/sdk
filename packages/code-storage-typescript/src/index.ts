@@ -32,6 +32,7 @@ import {
 } from './schemas';
 import type {
   AppendNoteOptions,
+  ArchiveOptions,
   BranchInfo,
   CommitBuilder,
   CommitInfo,
@@ -614,6 +615,37 @@ class RepoImpl implements Repo {
     return this.api.get({ path: 'repos/file', params }, jwt);
   }
 
+  async getArchiveStream(options: ArchiveOptions = {}): Promise<Response> {
+    const ttl = resolveInvocationTtlSeconds(options, DEFAULT_TOKEN_TTL_SECONDS);
+    const jwt = await this.generateJWT(this.id, {
+      permissions: ['git:read'],
+      ttl,
+    });
+
+    const body: Record<string, unknown> = {};
+    const ref = options.ref?.trim();
+    if (ref) {
+      body.ref = ref;
+    }
+    if (Array.isArray(options.includeGlobs) && options.includeGlobs.length > 0) {
+      body.include_globs = options.includeGlobs;
+    }
+    if (Array.isArray(options.excludeGlobs) && options.excludeGlobs.length > 0) {
+      body.exclude_globs = options.excludeGlobs;
+    }
+    if (typeof options.archivePrefix === 'string') {
+      const prefix = options.archivePrefix.trim();
+      if (prefix) {
+        body.archive = { prefix };
+      }
+    }
+
+    const path =
+      Object.keys(body).length > 0 ? { path: 'repos/archive', body } : 'repos/archive';
+
+    return this.api.post(path, jwt);
+  }
+
   async listFiles(options?: ListFilesOptions): Promise<ListFilesResult> {
     const ttl = resolveInvocationTtlSeconds(options, DEFAULT_TOKEN_TTL_SECONDS);
     const jwt = await this.generateJWT(this.id, {
@@ -957,8 +989,9 @@ class RepoImpl implements Repo {
       },
     };
 
-    if (options.ref) {
-      body.rev = options.ref;
+    const ref = options.ref?.trim() || options.rev?.trim();
+    if (ref) {
+      body.ref = ref;
     }
     if (Array.isArray(options.paths) && options.paths.length > 0) {
       body.paths = options.paths;

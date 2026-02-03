@@ -136,6 +136,15 @@ type GetFileOptions struct {
 	EphemeralBase *bool
 }
 
+// ArchiveOptions configures repository archive download.
+type ArchiveOptions struct {
+	InvocationOptions
+	Ref           string
+	IncludeGlobs  []string
+	ExcludeGlobs  []string
+	ArchivePrefix string
+}
+
 // PullUpstreamOptions configures pull-upstream.
 type PullUpstreamOptions struct {
 	InvocationOptions
@@ -364,6 +373,8 @@ type GetCommitDiffResult struct {
 type GrepOptions struct {
 	InvocationOptions
 	Ref         string
+	// Deprecated: use Ref instead.
+	Rev         string
 	Query       GrepQuery
 	Paths       []string
 	FileFilters *GrepFileFilters

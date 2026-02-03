@@ -78,8 +78,8 @@ func TestGrepRequestBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]interface{}
 		_ = json.NewDecoder(r.Body).Decode(&body)
-		if body["rev"] != "main" {
-			t.Fatalf("expected rev main")
+		if body["ref"] != "main" {
+			t.Fatalf("expected ref main")
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"query":{"pattern":"SEARCH","case_sensitive":false},"repo":{"ref":"main","commit":"deadbeef"},"matches":[],"has_more":false}`))
@@ -95,6 +95,36 @@ func TestGrepRequestBody(t *testing.T) {
 	_, err = repo.Grep(nil, GrepOptions{
 		Ref:   "main",
 		Paths: []string{"src/"},
+		Query: GrepQuery{Pattern: "SEARCH", CaseSensitive: boolPtr(false)},
+	})
+	if err != nil {
+		t.Fatalf("grep error: %v", err)
+	}
+}
+
+func TestGrepRequestLegacyRev(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["ref"] != "main" {
+			t.Fatalf("expected ref main")
+		}
+		if _, ok := body["rev"]; ok {
+			t.Fatalf("expected rev to be omitted when using legacy rev")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"query":{"pattern":"SEARCH","case_sensitive":false},"repo":{"ref":"main","commit":"deadbeef"},"matches":[],"has_more":false}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+
+	_, err = repo.Grep(nil, GrepOptions{
+		Rev:   "main",
 		Query: GrepQuery{Pattern: "SEARCH", CaseSensitive: boolPtr(false)},
 	})
 	if err != nil {
@@ -604,6 +634,50 @@ func TestFileStreamEphemeralBase(t *testing.T) {
 	resp, err := repo.FileStream(nil, GetFileOptions{Path: "docs/readme.md", EphemeralBase: &flag})
 	if err != nil {
 		t.Fatalf("file stream error: %v", err)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestArchiveStream(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("unexpected method: %s", r.Method)
+		}
+		var payload archiveRequest
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatalf("decode payload: %v", err)
+		}
+		if payload.Ref != "main" {
+			t.Fatalf("unexpected ref: %s", payload.Ref)
+		}
+		if len(payload.IncludeGlobs) != 1 || payload.IncludeGlobs[0] != "README.md" {
+			t.Fatalf("unexpected include globs: %v", payload.IncludeGlobs)
+		}
+		if len(payload.ExcludeGlobs) != 1 || payload.ExcludeGlobs[0] != "vendor/**" {
+			t.Fatalf("unexpected exclude globs: %v", payload.ExcludeGlobs)
+		}
+		if payload.Archive == nil || payload.Archive.Prefix != "repo/" {
+			t.Fatalf("unexpected archive prefix")
+		}
+		w.Header().Set("Content-Type", "application/gzip")
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+
+	resp, err := repo.ArchiveStream(nil, ArchiveOptions{
+		Ref:           "main",
+		IncludeGlobs:  []string{"README.md"},
+		ExcludeGlobs:  []string{"vendor/**"},
+		ArchivePrefix: "repo/",
+	})
+	if err != nil {
+		t.Fatalf("archive stream error: %v", err)
 	}
 	_ = resp.Body.Close()
 }

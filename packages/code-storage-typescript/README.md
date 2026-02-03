@@ -141,6 +141,16 @@ const resp = await repo.getFileStream({
 const text = await resp.text();
 console.log(text);
 
+// Download repository archive (streaming tar.gz)
+const archiveResp = await repo.getArchiveStream({
+  ref: 'main',
+  includeGlobs: ['README.md'],
+  excludeGlobs: ['vendor/**'],
+  archivePrefix: 'repo/',
+});
+const archiveBytes = new Uint8Array(await archiveResp.arrayBuffer());
+console.log(archiveBytes.length);
+
 // List all files in the repository
 const files = await repo.listFiles({
   ref: 'main', // optional, defaults to default branch
@@ -384,6 +394,7 @@ interface Repo {
   getEphemeralRemoteURL(options?: GetRemoteURLOptions): Promise<string>;
 
   getFileStream(options: GetFileOptions): Promise<Response>;
+  getArchiveStream(options?: ArchiveOptions): Promise<Response>;
   listFiles(options?: ListFilesOptions): Promise<ListFilesResult>;
   listBranches(options?: ListBranchesOptions): Promise<ListBranchesResult>;
   listCommits(options?: ListCommitsOptions): Promise<ListCommitsResult>;
@@ -408,6 +419,16 @@ interface GetFileOptions {
 }
 
 // getFileStream() returns a standard Fetch Response for streaming bytes
+
+interface ArchiveOptions {
+  ref?: string; // Branch, tag, or commit SHA (defaults to default branch)
+  includeGlobs?: string[];
+  excludeGlobs?: string[];
+  archivePrefix?: string;
+  ttl?: number;
+}
+
+// getArchiveStream() returns a standard Fetch Response for streaming tar.gz bytes
 
 interface ListFilesOptions {
   ref?: string; // Branch, tag, or commit SHA
