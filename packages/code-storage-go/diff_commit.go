@@ -72,9 +72,9 @@ func (d *diffCommitExecutor) send(ctx context.Context, repoID string) (CommitRes
 		return CommitResult{}, err
 	}
 
-	diffReader, err := toReader(options.Diff)
-	if err != nil {
-		return CommitResult{}, err
+	diffReader := options.Diff
+	if diffReader == nil {
+		return CommitResult{}, errors.New("createCommitFromDiff diff is required")
 	}
 
 	metadata := buildDiffCommitMetadata(options)

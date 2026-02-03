@@ -77,7 +77,7 @@ func (b *CommitBuilder) normalize() error {
 }
 
 // AddFile adds a file to the commit.
-func (b *CommitBuilder) AddFile(path string, source interface{}, options *CommitFileOptions) *CommitBuilder {
+func (b *CommitBuilder) AddFile(path string, source io.Reader, options *CommitFileOptions) *CommitBuilder {
 	if b.err != nil {
 		return b
 	}
@@ -90,10 +90,8 @@ func (b *CommitBuilder) AddFile(path string, source interface{}, options *Commit
 		b.err = err
 		return b
 	}
-
-	reader, err := toReader(source)
-	if err != nil {
-		b.err = err
+	if source == nil {
+		b.err = errors.New("unsupported content source; expected binary data")
 		return b
 	}
 
@@ -107,9 +105,17 @@ func (b *CommitBuilder) AddFile(path string, source interface{}, options *Commit
 		ContentID: uuid.NewString(),
 		Mode:      mode,
 		Operation: "upsert",
-		Source:    reader,
+		Source:    source,
 	})
 	return b
+}
+
+// AddFileFromBytes adds a binary file.
+func (b *CommitBuilder) AddFileFromBytes(path string, contents []byte, options *CommitFileOptions) *CommitBuilder {
+	if b.err != nil {
+		return b
+	}
+	return b.AddFile(path, bytes.NewReader(contents), options)
 }
 
 // AddFileFromString adds a text file.
@@ -127,9 +133,9 @@ func (b *CommitBuilder) AddFileFromString(path string, contents string, options 
 		return b
 	}
 	if options == nil {
-		return b.AddFile(path, []byte(contents), nil)
+		return b.AddFile(path, strings.NewReader(contents), nil)
 	}
-	return b.AddFile(path, []byte(contents), &options.CommitFileOptions)
+	return b.AddFile(path, strings.NewReader(contents), &options.CommitFileOptions)
 }
 
 // DeletePath removes a file or directory.
@@ -395,19 +401,4 @@ func doStreamingRequest(ctx context.Context, client *http.Client, method string,
 	req.Header.Set("Code-Storage-Agent", userAgent())
 
 	return client.Do(req)
-}
-
-func toReader(source interface{}) (io.Reader, error) {
-	switch value := source.(type) {
-	case nil:
-		return nil, errors.New("unsupported content source; expected binary data")
-	case []byte:
-		return bytes.NewReader(value), nil
-	case string:
-		return strings.NewReader(value), nil
-	case io.Reader:
-		return value, nil
-	default:
-		return nil, errors.New("unsupported content source; expected binary data")
-	}
 }

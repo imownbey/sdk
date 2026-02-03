@@ -93,7 +93,7 @@ func TestCommitFromDiffRequest(t *testing.T) {
 		TargetBranch:  "main",
 		CommitMessage: "test",
 		Author:        CommitSignature{Name: "Tester", Email: "test@example.com"},
-		Diff:          "diff content",
+		Diff:          strings.NewReader("diff content"),
 	})
 	if err != nil {
 		t.Fatalf("commit from diff error: %v", err)

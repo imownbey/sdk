@@ -2,6 +2,7 @@ package storage
 
 import (
 	"crypto/ecdsa"
+	"io"
 	"net/http"
 	"time"
 )
@@ -503,7 +504,7 @@ type CommitFromDiffOptions struct {
 	InvocationOptions
 	TargetBranch    string
 	CommitMessage   string
-	Diff            interface{}
+	Diff            io.Reader
 	ExpectedHeadSHA string
 	BaseBranch      string
 	Ephemeral       bool
@@ -600,5 +601,3 @@ type Client struct {
 	api        *apiFetcher
 	privateKey *ecdsa.PrivateKey
 }
-
-

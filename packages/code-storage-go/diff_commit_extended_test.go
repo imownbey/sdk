@@ -36,7 +36,7 @@ func TestCommitFromDiffStreamsMetadataAndChunks(t *testing.T) {
 		CommitMessage:   "Apply patch",
 		ExpectedHeadSHA: "abc123",
 		Author:          CommitSignature{Name: "Author Name", Email: "author@example.com"},
-		Diff:            "diff --git a/file.txt b/file.txt\n",
+		Diff:            strings.NewReader("diff --git a/file.txt b/file.txt\n"),
 	})
 	if err != nil {
 		t.Fatalf("commit from diff error: %v", err)
@@ -125,7 +125,7 @@ func TestCommitFromDiffErrorResponseReturnsRefUpdateError(t *testing.T) {
 		CommitMessage:   "Apply patch",
 		ExpectedHeadSHA: "abc",
 		Author:          CommitSignature{Name: "Author", Email: "author@example.com"},
-		Diff:            "diff --git a/file.txt b/file.txt\n",
+		Diff:            strings.NewReader("diff --git a/file.txt b/file.txt\n"),
 	})
 	if err == nil {
 		t.Fatalf("expected error")
@@ -162,7 +162,7 @@ func TestCommitFromDiffIncludesUserAgentHeader(t *testing.T) {
 		TargetBranch:  "main",
 		CommitMessage: "Test user agent",
 		Author:        CommitSignature{Name: "Author Name", Email: "author@example.com"},
-		Diff:          "diff --git a/test.txt b/test.txt\n",
+		Diff:          strings.NewReader("diff --git a/test.txt b/test.txt\n"),
 	})
 	if err != nil {
 		t.Fatalf("commit from diff error: %v", err)
