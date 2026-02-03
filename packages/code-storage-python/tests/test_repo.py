@@ -158,6 +158,62 @@ class TestRepoFileOperations:
             stream_client.aclose.assert_awaited_once()
 
     @pytest.mark.asyncio
+    async def test_get_archive_stream(self, git_storage_options: dict) -> None:
+        """Ensure archive requests include filters and prefix."""
+        storage = GitStorage(git_storage_options)
+
+        create_response = MagicMock()
+        create_response.status_code = 200
+        create_response.is_success = True
+        create_response.json.return_value = {"repo_id": "test-repo"}
+
+        archive_response = MagicMock()
+        archive_response.status_code = 200
+        archive_response.is_success = True
+        archive_response.raise_for_status = MagicMock()
+        archive_response.aclose = AsyncMock()
+
+        with patch("httpx.AsyncClient") as mock_client_cls:
+            create_client = MagicMock()
+            create_client.__aenter__.return_value.post = AsyncMock(return_value=create_response)
+            create_client.__aexit__.return_value = False
+
+            stream_client = MagicMock()
+            stream_context = MagicMock()
+            stream_context.__aenter__ = AsyncMock(return_value=archive_response)
+            stream_context.__aexit__ = AsyncMock(return_value=False)
+            stream_client.stream = MagicMock(return_value=stream_context)
+            stream_client.aclose = AsyncMock()
+
+            mock_client_cls.side_effect = [create_client, stream_client]
+
+            repo = await storage.create_repo(id="test-repo")
+            response = await repo.get_archive_stream(
+                rev="main",
+                include_globs=["README.md"],
+                exclude_globs=["vendor/**"],
+                archive_prefix="repo/",
+            )
+
+            assert response.status_code == 200
+            assert stream_client.stream.call_args.args[0] == "POST"
+            called_url = stream_client.stream.call_args.args[1]
+            parsed = urlparse(called_url)
+            assert parsed.path.endswith("/repos/archive")
+            payload = stream_client.stream.call_args.kwargs["json"]
+            assert payload == {
+                "rev": "main",
+                "include_globs": ["README.md"],
+                "exclude_globs": ["vendor/**"],
+                "archive": {"prefix": "repo/"},
+            }
+
+            await response.aclose()
+            stream_client.stream.assert_called_once()
+            archive_response.aclose.assert_awaited_once()
+            stream_client.aclose.assert_awaited_once()
+
+    @pytest.mark.asyncio
     async def test_list_files(self, git_storage_options: dict) -> None:
         """Test listing files in repository."""
         storage = GitStorage(git_storage_options)

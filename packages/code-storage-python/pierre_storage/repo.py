@@ -235,6 +235,62 @@ class RepoImpl:
 
         return StreamingResponse(response, client)
 
+    async def get_archive_stream(
+        self,
+        *,
+        rev: Optional[str] = None,
+        include_globs: Optional[List[str]] = None,
+        exclude_globs: Optional[List[str]] = None,
+        archive_prefix: Optional[str] = None,
+        ttl: Optional[int] = None,
+    ) -> StreamingResponse:
+        """Get repository archive as streaming response.
+
+        Args:
+            rev: Git ref (branch, tag, or commit SHA)
+            include_globs: Optional include globs for archived files
+            exclude_globs: Optional exclude globs for archived files
+            archive_prefix: Optional archive prefix for tar entries
+            ttl: Token TTL in seconds
+
+        Returns:
+            HTTP response with archive stream
+        """
+        ttl = ttl or DEFAULT_TOKEN_TTL_SECONDS
+        jwt = self.generate_jwt(self._id, {"permissions": ["git:read"], "ttl": ttl})
+
+        body: Dict[str, Any] = {}
+        if rev and rev.strip():
+            body["rev"] = rev.strip()
+        if include_globs:
+            body["include_globs"] = include_globs
+        if exclude_globs:
+            body["exclude_globs"] = exclude_globs
+        if archive_prefix and archive_prefix.strip():
+            body["archive"] = {"prefix": archive_prefix.strip()}
+
+        url = f"{self.api_base_url}/api/v{self.api_version}/repos/archive"
+
+        client = httpx.AsyncClient()
+        try:
+            request_kwargs: Dict[str, Any] = {
+                "headers": {
+                    "Authorization": f"Bearer {jwt}",
+                    "Code-Storage-Agent": get_user_agent(),
+                },
+                "timeout": 30.0,
+            }
+            if body:
+                request_kwargs["json"] = body
+            stream_context = client.stream("POST", url, **request_kwargs)
+            response = await stream_context.__aenter__()
+            response.raise_for_status()
+        except Exception:
+            await client.aclose()
+            raise
+
+        return StreamingResponse(response, client)
+
     async def list_files(
         self,
         *,

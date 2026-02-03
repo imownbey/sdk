@@ -77,6 +77,18 @@ type pullUpstreamRequest struct {
 	Ref string `json:"ref,omitempty"`
 }
 
+// archiveRequest is the JSON body for ArchiveStream.
+type archiveRequest struct {
+	Rev          string          `json:"rev,omitempty"`
+	IncludeGlobs []string        `json:"include_globs,omitempty"`
+	ExcludeGlobs []string        `json:"exclude_globs,omitempty"`
+	Archive      *archiveOptions `json:"archive,omitempty"`
+}
+
+type archiveOptions struct {
+	Prefix string `json:"prefix,omitempty"`
+}
+
 // createBranchRequest is the JSON body for CreateBranch.
 type createBranchRequest struct {
 	BaseBranch        string `json:"base_branch"`

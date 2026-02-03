@@ -608,6 +608,50 @@ func TestFileStreamEphemeralBase(t *testing.T) {
 	_ = resp.Body.Close()
 }
 
+func TestArchiveStream(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("unexpected method: %s", r.Method)
+		}
+		var payload archiveRequest
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatalf("decode payload: %v", err)
+		}
+		if payload.Rev != "main" {
+			t.Fatalf("unexpected rev: %s", payload.Rev)
+		}
+		if len(payload.IncludeGlobs) != 1 || payload.IncludeGlobs[0] != "README.md" {
+			t.Fatalf("unexpected include globs: %v", payload.IncludeGlobs)
+		}
+		if len(payload.ExcludeGlobs) != 1 || payload.ExcludeGlobs[0] != "vendor/**" {
+			t.Fatalf("unexpected exclude globs: %v", payload.ExcludeGlobs)
+		}
+		if payload.Archive == nil || payload.Archive.Prefix != "repo/" {
+			t.Fatalf("unexpected archive prefix")
+		}
+		w.Header().Set("Content-Type", "application/gzip")
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+
+	resp, err := repo.ArchiveStream(nil, ArchiveOptions{
+		Rev:           "main",
+		IncludeGlobs:  []string{"README.md"},
+		ExcludeGlobs:  []string{"vendor/**"},
+		ArchivePrefix: "repo/",
+	})
+	if err != nil {
+		t.Fatalf("archive stream error: %v", err)
+	}
+	_ = resp.Body.Close()
+}
+
 func TestListCommitsDateParsing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

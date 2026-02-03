@@ -341,6 +341,42 @@ describe('GitStorage', () => {
     expect(response.status).toBe(200);
   });
 
+  it('posts archive requests with globs and prefix', async () => {
+    const store = new GitStorage({ name: 'v0', key });
+    const repo = await store.createRepo({ id: 'repo-archive' });
+
+    mockFetch.mockImplementationOnce((url, init) => {
+      expect(init?.method).toBe('POST');
+      const requestUrl = new URL(url as string);
+      expect(requestUrl.pathname.endsWith('/repos/archive')).toBe(true);
+      const payload = JSON.parse(init?.body as string);
+      expect(payload).toEqual({
+        rev: 'main',
+        include_globs: ['README.md'],
+        exclude_globs: ['vendor/**'],
+        archive: { prefix: 'repo/' },
+      });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: { get: () => null } as any,
+        json: async () => ({}),
+        text: async () => '',
+      } as any);
+    });
+
+    const response = await repo.getArchiveStream({
+      rev: 'main',
+      includeGlobs: ['README.md'],
+      excludeGlobs: ['vendor/**'],
+      archivePrefix: 'repo/',
+    });
+
+    expect(response.ok).toBe(true);
+    expect(response.status).toBe(200);
+  });
+
   it('passes ephemeral flag to listFiles', async () => {
     const store = new GitStorage({ name: 'v0', key });
     const repo = await store.createRepo({ id: 'repo-ephemeral-list' });

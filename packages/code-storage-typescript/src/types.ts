@@ -46,6 +46,7 @@ export interface Repo {
   getEphemeralRemoteURL(options?: GetRemoteURLOptions): Promise<string>;
 
   getFileStream(options: GetFileOptions): Promise<Response>;
+  getArchiveStream(options?: ArchiveOptions): Promise<Response>;
   listFiles(options?: ListFilesOptions): Promise<ListFilesResult>;
   listBranches(options?: ListBranchesOptions): Promise<ListBranchesResult>;
   listCommits(options?: ListCommitsOptions): Promise<ListCommitsResult>;
@@ -154,6 +155,13 @@ export interface GetFileOptions extends GitStorageInvocationOptions {
   ref?: string;
   ephemeral?: boolean;
   ephemeralBase?: boolean;
+}
+
+export interface ArchiveOptions extends GitStorageInvocationOptions {
+  rev?: string;
+  includeGlobs?: string[];
+  excludeGlobs?: string[];
+  archivePrefix?: string;
 }
 
 export interface PullUpstreamOptions extends GitStorageInvocationOptions {

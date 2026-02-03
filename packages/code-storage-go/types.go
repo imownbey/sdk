@@ -135,6 +135,15 @@ type GetFileOptions struct {
 	EphemeralBase *bool
 }
 
+// ArchiveOptions configures repository archive download.
+type ArchiveOptions struct {
+	InvocationOptions
+	Rev           string
+	IncludeGlobs  []string
+	ExcludeGlobs  []string
+	ArchivePrefix string
+}
+
 // PullUpstreamOptions configures pull-upstream.
 type PullUpstreamOptions struct {
 	InvocationOptions
@@ -600,5 +609,3 @@ type Client struct {
 	api        *apiFetcher
 	privateKey *ecdsa.PrivateKey
 }
-
-

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -84,7 +85,7 @@ func (r *Repo) FileStream(ctx context.Context, options GetFileOptions) (*http.Re
 	ttl := resolveInvocationTTL(options.InvocationOptions, defaultTokenTTL)
 	jwtToken, err := r.client.generateJWT(r.ID, RemoteURLOptions{Permissions: []Permission{PermissionGitRead}, TTL: ttl})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("archive stream generate jwt: %w", err)
 	}
 
 	params := url.Values{}
@@ -102,6 +103,41 @@ func (r *Repo) FileStream(ctx context.Context, options GetFileOptions) (*http.Re
 	resp, err := r.client.api.get(ctx, "repos/file", params, jwtToken, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return resp, nil
+}
+
+// ArchiveStream returns the raw response for streaming repository archives.
+func (r *Repo) ArchiveStream(ctx context.Context, options ArchiveOptions) (*http.Response, error) {
+	ttl := resolveInvocationTTL(options.InvocationOptions, defaultTokenTTL)
+	jwtToken, err := r.client.generateJWT(r.ID, RemoteURLOptions{Permissions: []Permission{PermissionGitRead}, TTL: ttl})
+	if err != nil {
+		return nil, err
+	}
+
+	req := archiveRequest{}
+	if rev := strings.TrimSpace(options.Rev); rev != "" {
+		req.Rev = rev
+	}
+	if len(options.IncludeGlobs) > 0 {
+		req.IncludeGlobs = options.IncludeGlobs
+	}
+	if len(options.ExcludeGlobs) > 0 {
+		req.ExcludeGlobs = options.ExcludeGlobs
+	}
+	if prefix := strings.TrimSpace(options.ArchivePrefix); prefix != "" {
+		req.Archive = &archiveOptions{Prefix: prefix}
+	}
+
+	var body interface{}
+	if req.Rev != "" || len(req.IncludeGlobs) > 0 || len(req.ExcludeGlobs) > 0 || req.Archive != nil {
+		body = req
+	}
+
+	resp, err := r.client.api.post(ctx, "repos/archive", nil, body, jwtToken, nil)
+	if err != nil {
+		return nil, fmt.Errorf("archive stream request: %w", err)
 	}
 
 	return resp, nil

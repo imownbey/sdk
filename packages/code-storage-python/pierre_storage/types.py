@@ -429,6 +429,18 @@ class Repo(Protocol):
         """Get a file as a stream."""
         ...
 
+    async def get_archive_stream(
+        self,
+        *,
+        rev: Optional[str] = None,
+        include_globs: Optional[list[str]] = None,
+        exclude_globs: Optional[list[str]] = None,
+        archive_prefix: Optional[str] = None,
+        ttl: Optional[int] = None,
+    ) -> Any:  # httpx.Response
+        """Get a repository archive as a stream."""
+        ...
+
     async def list_files(
         self,
         *,
