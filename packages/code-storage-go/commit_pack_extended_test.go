@@ -300,7 +300,7 @@ func TestCommitPackAcceptsReaderSources(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder = builder.AddFile("assets/blob.bin", []byte("blob-payload"), nil).
+	builder = builder.AddFileFromBytes("assets/blob.bin", []byte("blob-payload"), nil).
 		AddFile("assets/stream.bin", strings.NewReader("streamed-payload"), nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
@@ -371,7 +371,7 @@ func TestCommitPackSplitsLargePayloads(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder = builder.AddFile("large.bin", payload, nil)
+	builder = builder.AddFileFromBytes("large.bin", payload, nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
@@ -482,7 +482,7 @@ func TestCommitPackAcceptsBinaryBytes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("builder error: %v", err)
 	}
-	builder = builder.AddFile("docs/hola.txt", payload, nil)
+	builder = builder.AddFileFromBytes("docs/hola.txt", payload, nil)
 	if _, err := builder.Send(nil); err != nil {
 		t.Fatalf("send error: %v", err)
 	}
