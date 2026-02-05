@@ -603,6 +603,7 @@ type WebhookEventPayload struct {
 type Repo struct {
 	ID            string
 	DefaultBranch string
+	CreatedAt     string
 	client        *Client
 }
 

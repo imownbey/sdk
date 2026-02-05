@@ -558,6 +558,7 @@ class RepoImpl implements Repo {
   constructor(
     public readonly id: string,
     public readonly defaultBranch: string,
+    public readonly createdAt: string,
     private readonly options: GitStorageOptions,
     private readonly generateJWT: (
       repoId: string,
@@ -1393,6 +1394,7 @@ export class GitStorage {
     return new RepoImpl(
       repoId,
       resolvedDefaultBranch ?? 'main',
+      new Date().toISOString(),
       this.options,
       this.generateJWT.bind(this)
     );
@@ -1444,11 +1446,13 @@ export class GitStorage {
     if (resp.status === 404) {
       return null;
     }
-    const body = (await resp.json()) as { default_branch?: string };
+    const body = (await resp.json()) as { default_branch?: string; created_at?: string };
     const defaultBranch = body.default_branch ?? 'main';
+    const createdAt = body.created_at ?? '';
     return new RepoImpl(
       options.id,
       defaultBranch,
+      createdAt,
       this.options,
       this.generateJWT.bind(this)
     );

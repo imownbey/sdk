@@ -601,6 +601,20 @@ describe('GitStorage', () => {
       expect(ephemeralURL).not.toContain(`${repo.id}.git`);
     });
 
+    it('should set createdAt on newly created repos', async () => {
+      const before = new Date().toISOString();
+      const store = new GitStorage({ name: 'v0', key });
+      const repo = await store.createRepo({ id: 'repo-created-at' });
+
+      expect(repo.createdAt).toBeDefined();
+      expect(typeof repo.createdAt).toBe('string');
+      expect(repo.createdAt.length).toBeGreaterThan(0);
+      // Should be a valid ISO date string close to now
+      const after = new Date().toISOString();
+      expect(repo.createdAt >= before).toBe(true);
+      expect(repo.createdAt <= after).toBe(true);
+    });
+
     it('should use provided id instead of generating UUID', async () => {
       const store = new GitStorage({ name: 'v0', key });
       const customName = 'my-custom-repo-name';
@@ -844,6 +858,41 @@ describe('GitStorage', () => {
         /^https:\/\/t:.+@v0\.3p\.pierre\.rip\/test-repo-id\.git$/
       );
       expect(url).toContain('eyJ'); // JWT should contain base64 encoded content
+    });
+
+    it('should expose createdAt from API response', async () => {
+      const store = new GitStorage({ name: 'v0', key });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          default_branch: 'main',
+          created_at: '2024-06-15T12:00:00Z',
+        }),
+      });
+
+      const repo = await store.findOne({ id: 'test-repo-id' });
+      expect(repo).toBeDefined();
+      expect(repo?.createdAt).toBe('2024-06-15T12:00:00Z');
+    });
+
+    it('should default createdAt to empty string when not in response', async () => {
+      const store = new GitStorage({ name: 'v0', key });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          default_branch: 'main',
+        }),
+      });
+
+      const repo = await store.findOne({ id: 'test-repo-id' });
+      expect(repo).toBeDefined();
+      expect(repo?.createdAt).toBe('');
     });
 
     it('should handle getRemoteURL with options', async () => {
