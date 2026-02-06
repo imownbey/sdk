@@ -42,6 +42,7 @@ export interface GetRemoteURLOptions {
 export interface Repo {
   id: string;
   defaultBranch: string;
+  createdAt: string;
   getRemoteURL(options?: GetRemoteURLOptions): Promise<string>;
   getEphemeralRemoteURL(options?: GetRemoteURLOptions): Promise<string>;
 

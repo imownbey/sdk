@@ -304,6 +304,85 @@ func TestFindOneReturnsRepo(t *testing.T) {
 	}
 }
 
+func TestFindOneCreatedAt(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"default_branch":"main","created_at":"2024-06-15T12:00:00Z"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+
+	repo, err := client.FindOne(nil, FindOneOptions{ID: "repo-1"})
+	if err != nil {
+		t.Fatalf("find one error: %v", err)
+	}
+	if repo == nil {
+		t.Fatalf("expected repo")
+	}
+	if repo.CreatedAt != "2024-06-15T12:00:00Z" {
+		t.Fatalf("expected createdAt 2024-06-15T12:00:00Z, got %s", repo.CreatedAt)
+	}
+}
+
+func TestFindOneCreatedAtMissing(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"default_branch":"main"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+
+	repo, err := client.FindOne(nil, FindOneOptions{ID: "repo-1"})
+	if err != nil {
+		t.Fatalf("find one error: %v", err)
+	}
+	if repo == nil {
+		t.Fatalf("expected repo")
+	}
+	if repo.CreatedAt != "" {
+		t.Fatalf("expected empty createdAt, got %s", repo.CreatedAt)
+	}
+}
+
+func TestCreateRepoCreatedAt(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"repo_id":"repo","url":"https://repo.git"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+
+	before := time.Now().UTC()
+	repo, err := client.CreateRepo(nil, CreateRepoOptions{})
+	if err != nil {
+		t.Fatalf("create repo error: %v", err)
+	}
+	after := time.Now().UTC()
+
+	if repo.CreatedAt == "" {
+		t.Fatalf("expected non-empty createdAt")
+	}
+	parsed, err := time.Parse(time.RFC3339, repo.CreatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse createdAt: %v", err)
+	}
+	if parsed.Before(before.Add(-time.Second)) || parsed.After(after.Add(time.Second)) {
+		t.Fatalf("createdAt %s not within expected range", repo.CreatedAt)
+	}
+}
+
 func TestFindOneNotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)

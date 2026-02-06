@@ -1,0 +1,9 @@
+go = "1.25.3"
+moon = "1.41.4"
+node = "22.14.0"
+pnpm = "10.11.1"
+
+[settings]
+auto-clean = true
+auto-install = true
+telemetry = false

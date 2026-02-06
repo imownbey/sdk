@@ -164,7 +164,7 @@ func (c *Client) CreateRepo(ctx context.Context, options CreateRepoOptions) (*Re
 	if resolvedDefaultBranch == "" {
 		resolvedDefaultBranch = "main"
 	}
-	return &Repo{ID: repoID, DefaultBranch: resolvedDefaultBranch, client: c}, nil
+	return &Repo{ID: repoID, DefaultBranch: resolvedDefaultBranch, CreatedAt: time.Now().UTC().Format(time.RFC3339), client: c}, nil
 }
 
 // ListRepos lists repositories for the org.
@@ -242,6 +242,7 @@ func (c *Client) FindOne(ctx context.Context, options FindOneOptions) (*Repo, er
 
 	var payload struct {
 		DefaultBranch string `json:"default_branch"`
+		CreatedAt     string `json:"created_at"`
 	}
 	if err := decodeJSON(resp, &payload); err != nil {
 		return nil, err
@@ -250,7 +251,7 @@ func (c *Client) FindOne(ctx context.Context, options FindOneOptions) (*Repo, er
 	if defaultBranch == "" {
 		defaultBranch = "main"
 	}
-	return &Repo{ID: options.ID, DefaultBranch: defaultBranch, client: c}, nil
+	return &Repo{ID: options.ID, DefaultBranch: defaultBranch, CreatedAt: payload.CreatedAt, client: c}, nil
 }
 
 // DeleteRepo deletes a repository by ID.
