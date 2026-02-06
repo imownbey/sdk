@@ -29,6 +29,7 @@ jobs:
           python-version: '3.12'
 
       - run: pnpm install
+        working-directory: packages/code-storage-typescript
 
       - uses: moonrepo/setup-toolchain@v0
         with:
