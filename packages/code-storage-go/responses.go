@@ -82,12 +82,14 @@ type diffStatsRaw struct {
 }
 
 type fileDiffRaw struct {
-	Path    string `json:"path"`
-	State   string `json:"state"`
-	OldPath string `json:"old_path"`
-	Raw     string `json:"raw"`
-	Bytes   int    `json:"bytes"`
-	IsEOF   bool   `json:"is_eof"`
+	Path      string `json:"path"`
+	State     string `json:"state"`
+	OldPath   string `json:"old_path"`
+	Raw       string `json:"raw"`
+	Bytes     int    `json:"bytes"`
+	IsEOF     bool   `json:"is_eof"`
+	Additions int    `json:"additions"`
+	Deletions int    `json:"deletions"`
 }
 
 type filteredFileRaw struct {

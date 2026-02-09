@@ -71,13 +71,15 @@ func transformBranchDiff(raw branchDiffResponse) GetBranchDiffResult {
 
 	for _, file := range raw.Files {
 		result.Files = append(result.Files, FileDiff{
-			Path:     file.Path,
-			State:    normalizeDiffState(file.State),
-			RawState: file.State,
-			OldPath:  strings.TrimSpace(file.OldPath),
-			Raw:      file.Raw,
-			Bytes:    file.Bytes,
-			IsEOF:    file.IsEOF,
+			Path:      file.Path,
+			State:     normalizeDiffState(file.State),
+			RawState:  file.State,
+			OldPath:   strings.TrimSpace(file.OldPath),
+			Raw:       file.Raw,
+			Bytes:     file.Bytes,
+			IsEOF:     file.IsEOF,
+			Additions: file.Additions,
+			Deletions: file.Deletions,
 		})
 	}
 
@@ -108,13 +110,15 @@ func transformCommitDiff(raw commitDiffResponse) GetCommitDiffResult {
 
 	for _, file := range raw.Files {
 		result.Files = append(result.Files, FileDiff{
-			Path:     file.Path,
-			State:    normalizeDiffState(file.State),
-			RawState: file.State,
-			OldPath:  strings.TrimSpace(file.OldPath),
-			Raw:      file.Raw,
-			Bytes:    file.Bytes,
-			IsEOF:    file.IsEOF,
+			Path:      file.Path,
+			State:     normalizeDiffState(file.State),
+			RawState:  file.State,
+			OldPath:   strings.TrimSpace(file.OldPath),
+			Raw:       file.Raw,
+			Bytes:     file.Bytes,
+			IsEOF:     file.IsEOF,
+			Additions: file.Additions,
+			Deletions: file.Deletions,
 		})
 	}
 

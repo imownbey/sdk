@@ -345,6 +345,8 @@ function transformFileDiff(raw: RawFileDiff): FileDiff {
     raw: raw.raw,
     bytes: raw.bytes,
     isEof: raw.is_eof,
+    additions: raw.additions ?? 0,
+    deletions: raw.deletions ?? 0,
   };
 }
 

@@ -622,6 +622,8 @@ interface FileDiff {
   bytes: number;
   isEof: boolean;
   raw: string;
+  additions: number;
+  deletions: number;
 }
 
 interface FilteredFile {

@@ -234,7 +234,7 @@ func TestCommitDiffQuery(t *testing.T) {
 			t.Fatalf("unexpected query: %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"sha":"abc","stats":{"files":1,"additions":1,"deletions":0,"changes":1},"files":[],"filtered_files":[]}`))
+		_, _ = w.Write([]byte(`{"sha":"abc","stats":{"files":1,"additions":1,"deletions":0,"changes":1},"files":[{"path":"README.md","state":"M","old_path":"","raw":"@@","bytes":10,"is_eof":true,"additions":3,"deletions":1}],"filtered_files":[]}`))
 	}))
 	defer server.Close()
 
@@ -244,9 +244,15 @@ func TestCommitDiffQuery(t *testing.T) {
 	}
 	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
 
-	_, err = repo.GetCommitDiff(nil, GetCommitDiffOptions{SHA: "abc", BaseSHA: "base"})
+	result, err := repo.GetCommitDiff(nil, GetCommitDiffOptions{SHA: "abc", BaseSHA: "base"})
 	if err != nil {
 		t.Fatalf("commit diff error: %v", err)
+	}
+	if len(result.Files) != 1 {
+		t.Fatalf("expected one file diff, got %d", len(result.Files))
+	}
+	if result.Files[0].Additions != 3 || result.Files[0].Deletions != 1 {
+		t.Fatalf("expected additions/deletions 3/1, got %d/%d", result.Files[0].Additions, result.Files[0].Deletions)
 	}
 }
 

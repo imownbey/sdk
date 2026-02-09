@@ -315,13 +315,15 @@ type DiffStats struct {
 
 // FileDiff describes a diffed file.
 type FileDiff struct {
-	Path     string
-	State    DiffFileState
-	RawState string
-	OldPath  string
-	Raw      string
-	Bytes    int
-	IsEOF    bool
+	Path      string
+	State     DiffFileState
+	RawState  string
+	OldPath   string
+	Raw       string
+	Bytes     int
+	IsEOF     bool
+	Additions int
+	Deletions int
 }
 
 // FilteredFile describes a filtered diff file.
