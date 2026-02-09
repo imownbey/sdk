@@ -1150,6 +1150,8 @@ describe('GitStorage', () => {
                 raw: '@@',
                 bytes: 10,
                 is_eof: true,
+                additions: 3,
+                deletions: 1,
               },
             ],
             filtered_files: [],
@@ -1165,6 +1167,8 @@ describe('GitStorage', () => {
 
       expect(result.branch).toBe('refs/heads/feature/demo');
       expect(result.base).toBe('refs/heads/main');
+      expect(result.files[0]?.additions).toBe(3);
+      expect(result.files[0]?.deletions).toBe(1);
     });
   });
 

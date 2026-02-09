@@ -426,6 +426,8 @@ export interface DiffFileBase {
 
 export interface FileDiff extends DiffFileBase {
   raw: string;
+  additions: number;
+  deletions: number;
 }
 
 export interface FilteredFile extends DiffFileBase {}

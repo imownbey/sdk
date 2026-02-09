@@ -88,6 +88,8 @@ export const diffFileRawSchema = z.object({
   raw: z.string(),
   bytes: z.number(),
   is_eof: z.boolean(),
+  additions: z.number().optional(),
+  deletions: z.number().optional(),
 });
 
 export const filteredFileRawSchema = z.object({
