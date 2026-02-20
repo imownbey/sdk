@@ -86,6 +86,13 @@ export interface FindOneOptions {
 
 export type SupportedRepoProvider = 'github';
 
+export interface PublicGitHubBaseRepoAuth {
+  /**
+   * Force public GitHub mode (no GitHub App installation required).
+   */
+  authType: 'public';
+}
+
 export interface GitHubBaseRepo {
   /**
    * @default github
@@ -94,6 +101,7 @@ export interface GitHubBaseRepo {
   owner: string;
   name: string;
   defaultBranch?: string;
+  auth?: PublicGitHubBaseRepoAuth;
 }
 
 export interface ForkBaseRepo {

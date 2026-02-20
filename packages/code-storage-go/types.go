@@ -58,12 +58,25 @@ type BaseRepo interface {
 	isBaseRepo()
 }
 
+// GitHubBaseRepoAuthType enumerates GitHub base repo auth modes.
+type GitHubBaseRepoAuthType string
+
+const (
+	GitHubBaseRepoAuthTypePublic GitHubBaseRepoAuthType = "public"
+)
+
+// GitHubBaseRepoAuth configures GitHub base repo authentication.
+type GitHubBaseRepoAuth struct {
+	AuthType GitHubBaseRepoAuthType
+}
+
 // GitHubBaseRepo references a GitHub repository.
 type GitHubBaseRepo struct {
 	Provider      SupportedRepoProvider
 	Owner         string
 	Name          string
 	DefaultBranch string
+	Auth          *GitHubBaseRepoAuth
 }
 
 func (GitHubBaseRepo) isBaseRepo() {}
@@ -374,7 +387,7 @@ type GetCommitDiffResult struct {
 // GrepOptions configures grep.
 type GrepOptions struct {
 	InvocationOptions
-	Ref         string
+	Ref string
 	// Deprecated: use Ref instead.
 	Rev         string
 	Query       GrepQuery

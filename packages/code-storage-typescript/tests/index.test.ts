@@ -683,6 +683,33 @@ describe('GitStorage', () => {
       );
     });
 
+    it('should send public GitHub baseRepo auth mode when provided', async () => {
+      const store = new GitStorage({ name: 'v0', key });
+      const baseRepo = {
+        owner: 'octocat',
+        name: 'Hello-World',
+        auth: { authType: 'public' as const },
+      };
+
+      await store.createRepo({ baseRepo });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            base_repo: {
+              provider: 'github',
+              owner: 'octocat',
+              name: 'Hello-World',
+              auth: { auth_type: 'public' },
+            },
+            default_branch: 'main',
+          }),
+        })
+      );
+    });
+
     it('should send fork baseRepo configuration with auth token', async () => {
       const store = new GitStorage({ name: 'v0', key });
       const baseRepo = {

@@ -77,6 +77,25 @@ fmt.Println(result.CommitSHA)
 
 TTL fields use `time.Duration` values (for example `time.Hour`).
 
+### Sync from a public GitHub base repository
+
+```go
+repo, err := client.CreateRepo(context.Background(), storage.CreateRepoOptions{
+	BaseRepo: storage.GitHubBaseRepo{
+		Owner: "octocat",
+		Name:  "hello-world",
+		Auth: &storage.GitHubBaseRepoAuth{
+			AuthType: storage.GitHubBaseRepoAuthTypePublic,
+		},
+	},
+})
+if err != nil {
+	log.Fatal(err)
+}
+
+fmt.Println(repo.ID)
+```
+
 ## Releasing a new version
 
 Because this Go module lives in a monorepo, git tags must be prefixed with the module's subdirectory path:

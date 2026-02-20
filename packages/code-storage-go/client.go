@@ -127,6 +127,9 @@ func (c *Client) CreateRepo(ctx context.Context, options CreateRepoOptions) (*Re
 				Owner:    base.Owner,
 				Name:     base.Name,
 			}
+			if base.Auth != nil && strings.TrimSpace(string(base.Auth.AuthType)) != "" {
+				baseRepo.Auth = &authPayload{AuthType: string(base.Auth.AuthType)}
+			}
 			if strings.TrimSpace(base.DefaultBranch) != "" {
 				baseRepo.DefaultBranch = base.DefaultBranch
 				resolvedDefaultBranch = base.DefaultBranch

@@ -18,7 +18,8 @@ type baseRepoPayload struct {
 }
 
 type authPayload struct {
-	Token string `json:"token"`
+	Token    string `json:"token,omitempty"`
+	AuthType string `json:"auth_type,omitempty"`
 }
 
 // noteWriteRequest is the JSON body for note write operations.
