@@ -44,6 +44,8 @@ github_repo = await storage.create_repo(
         "owner": "octocat",
         "name": "Hello-World",
         "default_branch": "main",  # optional
+        # Optional: force unauthenticated GitHub mode
+        # "auth": {"auth_type": "public"},
     }
 )
 # This repository will sync with github.com/octocat/Hello-World
@@ -459,6 +461,8 @@ repo = await storage.create_repo(
         "owner": "your-org",
         "name": "your-repo",
         "default_branch": "main",  # optional, defaults to "main"
+        # Optional: force public GitHub mode
+        # "auth": {"auth_type": "public"},
     }
 )
 
@@ -478,6 +482,7 @@ commits = await repo.list_commits()
 3. You can then use all Pierre SDK features (diffs, commits, file access) on the
    synced content
 4. The provider is automatically set to `"github"` when using `base_repo`
+5. Set `base_repo.auth.auth_type="public"` to force unauthenticated GitHub mode
 
 ### Forking Repositories
 
@@ -673,6 +678,7 @@ Key types are provided via TypedDict for better IDE support:
 from pierre_storage.types import (
     GitStorageOptions,
     BaseRepo,
+    PublicGitHubBaseRepoAuth,
     GitHubBaseRepo,
     ForkBaseRepo,
     CommitSignature,
@@ -689,11 +695,15 @@ from pierre_storage.types import (
 )
 
 # BaseRepo type for GitHub sync or forks
+class PublicGitHubBaseRepoAuth(TypedDict):
+    auth_type: Literal["public"]
+
 class GitHubBaseRepo(TypedDict, total=False):
     provider: Literal["github"]   # Always "github"
-    owner: str                    # GitHub organization or user
-    name: str                     # Repository name
-    default_branch: Optional[str] # Default branch (optional)
+    owner: str                     # GitHub organization or user
+    name: str                      # Repository name
+    default_branch: Optional[str]  # Default branch (optional)
+    auth: PublicGitHubBaseRepoAuth # Optional public GitHub mode
 
 class ForkBaseRepo(TypedDict, total=False):
     id: str                       # Source repo ID

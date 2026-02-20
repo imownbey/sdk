@@ -142,6 +142,50 @@ func TestCreateRepoGitHubBaseRepoDefaultBranch(t *testing.T) {
 	}
 }
 
+func TestCreateRepoGitHubBaseRepoPublicAuthType(t *testing.T) {
+	var receivedBody map[string]interface{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		_ = decoder.Decode(&receivedBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"repo_id":"repo","url":"https://repo.git"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+
+	_, err = client.CreateRepo(nil, CreateRepoOptions{
+		BaseRepo: GitHubBaseRepo{
+			Owner: "octocat",
+			Name:  "hello-world",
+			Auth: &GitHubBaseRepoAuth{
+				AuthType: GitHubBaseRepoAuthTypePublic,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("create repo error: %v", err)
+	}
+
+	baseRepo, ok := receivedBody["base_repo"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected base_repo payload")
+	}
+	auth, ok := baseRepo["auth"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected auth payload")
+	}
+	if auth["auth_type"] != "public" {
+		t.Fatalf("expected auth_type public, got %#v", auth["auth_type"])
+	}
+	if _, found := auth["token"]; found {
+		t.Fatalf("did not expect auth token for public github auth mode")
+	}
+}
+
 func TestCreateRepoGitHubBaseRepoCustomDefaultBranch(t *testing.T) {
 	var receivedBody map[string]interface{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

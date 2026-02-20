@@ -51,6 +51,15 @@ const forkedRepo = await store.createRepo({
   },
 });
 // If defaultBranch is omitted, the SDK returns "main".
+
+// Create a repo synced to a public GitHub repository without app auth
+const publicSyncRepo = await store.createRepo({
+  baseRepo: {
+    owner: 'octocat',
+    name: 'Hello-World',
+    auth: { authType: 'public' },
+  },
+});
 ```
 
 ### Finding a Repository
@@ -380,6 +389,9 @@ interface CreateRepoOptions {
         name: string; // GitHub repository name
         defaultBranch?: string;
         provider?: 'github';
+        auth?: {
+          authType: 'public'; // Force public GitHub mode (no app install)
+        };
       };
   defaultBranch?: string; // Optional default branch name (defaults to "main")
 }
