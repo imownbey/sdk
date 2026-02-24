@@ -203,7 +203,7 @@ class GitStorage:
                     response=response,
                 )
 
-        return self.hydrate_repo(
+        return self.repo(
             id=repo_id,
             default_branch=resolved_default_branch or "main",
             created_at=datetime.now(timezone.utc).isoformat(),
@@ -310,9 +310,9 @@ class GitStorage:
             default_branch = body.get("default_branch", "main")
             created_at = body.get("created_at", "")
 
-        return self.hydrate_repo(id=repo_id, default_branch=default_branch, created_at=created_at)
+        return self.repo(id=repo_id, default_branch=default_branch, created_at=created_at)
 
-    def hydrate_repo(
+    def repo(
         self,
         *,
         id: str,
@@ -333,7 +333,7 @@ class GitStorage:
             ValueError: If id is missing or invalid
         """
         if not isinstance(id, str) or not id.strip():
-            raise ValueError("hydrate_repo requires a non-empty repository id.")
+            raise ValueError("repo requires a non-empty repository id.")
 
         # These are guaranteed to be set in __init__
         api_base_url: str = self.options["api_base_url"]  # type: ignore[assignment]
@@ -351,6 +351,16 @@ class GitStorage:
             self._generate_jwt,
             created_at=created_at or "",
         )
+
+    def hydrate_repo(
+        self,
+        *,
+        id: str,
+        default_branch: Optional[str] = None,
+        created_at: Optional[str] = None,
+    ) -> Repo:
+        """Deprecated alias for repo()."""
+        return self.repo(id=id, default_branch=default_branch, created_at=created_at)
 
     async def delete_repo(
         self,

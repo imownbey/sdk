@@ -319,12 +319,12 @@ class TestGitStorage:
             assert "limit=10" in api_url
 
     @pytest.mark.asyncio
-    async def test_hydrate_repo_without_http_request(self, git_storage_options: dict) -> None:
-        """Test hydrate_repo creates a usable Repo without network calls."""
+    async def test_repo_without_http_request(self, git_storage_options: dict) -> None:
+        """Test repo creates a usable Repo without network calls."""
         storage = GitStorage(git_storage_options)
 
         with patch("httpx.AsyncClient") as mock_client:
-            repo = storage.hydrate_repo(
+            repo = storage.repo(
                 id="known-repo-id",
                 default_branch="develop",
                 created_at="2024-06-15T12:00:00Z",
@@ -340,23 +340,32 @@ class TestGitStorage:
             assert "@test.code.storage/known-repo-id.git" in url
             mock_client.assert_not_called()
 
-    def test_hydrate_repo_defaults(self, git_storage_options: dict) -> None:
-        """Test hydrate_repo default values when optional metadata is omitted."""
+    def test_repo_defaults(self, git_storage_options: dict) -> None:
+        """Test repo default values when optional metadata is omitted."""
+        storage = GitStorage(git_storage_options)
+
+        repo = storage.repo(id="known-repo-id")
+        assert repo.id == "known-repo-id"
+        assert repo.default_branch == "main"
+        assert repo.created_at == ""
+
+    def test_repo_requires_non_empty_id(self, git_storage_options: dict) -> None:
+        """Test repo validates repository id."""
+        storage = GitStorage(git_storage_options)
+
+        with pytest.raises(ValueError, match="repo requires a non-empty repository id"):
+            storage.repo(id="")
+        with pytest.raises(ValueError, match="repo requires a non-empty repository id"):
+            storage.repo(id="   ")
+
+    def test_hydrate_repo_alias(self, git_storage_options: dict) -> None:
+        """Test hydrate_repo remains available as a compatibility alias."""
         storage = GitStorage(git_storage_options)
 
         repo = storage.hydrate_repo(id="known-repo-id")
         assert repo.id == "known-repo-id"
         assert repo.default_branch == "main"
         assert repo.created_at == ""
-
-    def test_hydrate_repo_requires_non_empty_id(self, git_storage_options: dict) -> None:
-        """Test hydrate_repo validates repository id."""
-        storage = GitStorage(git_storage_options)
-
-        with pytest.raises(ValueError, match="hydrate_repo requires a non-empty repository id"):
-            storage.hydrate_repo(id="")
-        with pytest.raises(ValueError, match="hydrate_repo requires a non-empty repository id"):
-            storage.hydrate_repo(id="   ")
 
     @pytest.mark.asyncio
     async def test_find_one(self, git_storage_options: dict) -> None:

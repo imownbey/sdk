@@ -396,19 +396,19 @@ func TestFindOneCreatedAtMissing(t *testing.T) {
 	}
 }
 
-func TestHydrateRepoNoHTTPRequest(t *testing.T) {
+func TestRepoNoHTTPRequest(t *testing.T) {
 	client, err := NewClient(Options{Name: "acme", Key: testKey, StorageBaseURL: "acme.code.storage"})
 	if err != nil {
 		t.Fatalf("client error: %v", err)
 	}
 
-	repo, err := client.HydrateRepo(HydrateRepoOptions{
+	repo, err := client.Repo(RepoOptions{
 		ID:            "known-repo-id",
 		DefaultBranch: "develop",
 		CreatedAt:     "2024-06-15T12:00:00Z",
 	})
 	if err != nil {
-		t.Fatalf("hydrate repo error: %v", err)
+		t.Fatalf("repo error: %v", err)
 	}
 
 	if repo.ID != "known-repo-id" {
@@ -430,15 +430,15 @@ func TestHydrateRepoNoHTTPRequest(t *testing.T) {
 	}
 }
 
-func TestHydrateRepoDefaults(t *testing.T) {
+func TestRepoDefaults(t *testing.T) {
 	client, err := NewClient(Options{Name: "acme", Key: testKey, StorageBaseURL: "acme.code.storage"})
 	if err != nil {
 		t.Fatalf("client error: %v", err)
 	}
 
-	repo, err := client.HydrateRepo(HydrateRepoOptions{ID: "known-repo-id"})
+	repo, err := client.Repo(RepoOptions{ID: "known-repo-id"})
 	if err != nil {
-		t.Fatalf("hydrate repo error: %v", err)
+		t.Fatalf("repo error: %v", err)
 	}
 
 	if repo.DefaultBranch != "main" {
@@ -449,20 +449,35 @@ func TestHydrateRepoDefaults(t *testing.T) {
 	}
 }
 
-func TestHydrateRepoRequiresID(t *testing.T) {
+func TestRepoRequiresID(t *testing.T) {
 	client, err := NewClient(Options{Name: "acme", Key: testKey})
 	if err != nil {
 		t.Fatalf("client error: %v", err)
 	}
 
-	_, err = client.HydrateRepo(HydrateRepoOptions{})
-	if err == nil || !strings.Contains(err.Error(), "hydrateRepo id is required") {
-		t.Fatalf("expected hydrateRepo id is required error, got %v", err)
+	_, err = client.Repo(RepoOptions{})
+	if err == nil || !strings.Contains(err.Error(), "repo id is required") {
+		t.Fatalf("expected repo id is required error, got %v", err)
 	}
 
-	_, err = client.HydrateRepo(HydrateRepoOptions{ID: "   "})
-	if err == nil || !strings.Contains(err.Error(), "hydrateRepo id is required") {
-		t.Fatalf("expected hydrateRepo id is required error for whitespace id, got %v", err)
+	_, err = client.Repo(RepoOptions{ID: "   "})
+	if err == nil || !strings.Contains(err.Error(), "repo id is required") {
+		t.Fatalf("expected repo id is required error for whitespace id, got %v", err)
+	}
+}
+
+func TestHydrateRepoAlias(t *testing.T) {
+	client, err := NewClient(Options{Name: "acme", Key: testKey})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+
+	repo, err := client.HydrateRepo(HydrateRepoOptions{ID: "known-repo-id"})
+	if err != nil {
+		t.Fatalf("hydrate repo alias error: %v", err)
+	}
+	if repo.ID != "known-repo-id" {
+		t.Fatalf("expected repo id known-repo-id, got %s", repo.ID)
 	}
 }
 

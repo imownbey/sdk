@@ -82,7 +82,7 @@ TTL fields use `time.Duration` values (for example `time.Hour`).
 If you already know repo metadata, you can create a `Repo` handle directly:
 
 ```go
-repo, err := client.HydrateRepo(storage.HydrateRepoOptions{
+repo, err := client.Repo(storage.RepoOptions{
 	ID:            "repo-id",
 	DefaultBranch: "main",
 	CreatedAt:     "2024-06-15T12:00:00Z",

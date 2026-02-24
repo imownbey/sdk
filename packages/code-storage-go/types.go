@@ -46,12 +46,15 @@ type FindOneOptions struct {
 	ID string
 }
 
-// HydrateRepoOptions creates a repository handle from known metadata.
-type HydrateRepoOptions struct {
+// RepoOptions creates a repository handle from known metadata.
+type RepoOptions struct {
 	ID            string
 	DefaultBranch string
 	CreatedAt     string
 }
+
+// HydrateRepoOptions is a deprecated alias for RepoOptions.
+type HydrateRepoOptions = RepoOptions
 
 // SupportedRepoProvider lists base repo providers.
 type SupportedRepoProvider string

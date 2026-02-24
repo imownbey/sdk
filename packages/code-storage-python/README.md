@@ -74,13 +74,13 @@ if found_repo:
 If you already know the repo metadata, you can construct a `Repo` directly:
 
 ```python
-repo = storage.hydrate_repo(
+repo = storage.repo(
     id="repo-id",
     default_branch="main",
     created_at="2024-06-15T12:00:00Z",
 )
 
-# No HTTP request is made by hydrate_repo()
+# No HTTP request is made by repo()
 url = await repo.get_remote_url()
 print(url)
 ```
@@ -550,13 +550,20 @@ class GitStorage:
         ttl: Optional[int] = None,
     ) -> Repo: ...
     async def find_one(self, *, id: str) -> Optional[Repo]: ...
-    def hydrate_repo(
+    def repo(
         self,
         *,
         id: str,
         default_branch: Optional[str] = None,  # defaults to "main"
         created_at: Optional[str] = None,  # defaults to ""
     ) -> Repo: ...
+    def hydrate_repo(
+        self,
+        *,
+        id: str,
+        default_branch: Optional[str] = None,  # defaults to "main"
+        created_at: Optional[str] = None,  # defaults to ""
+    ) -> Repo: ...  # deprecated alias
     def get_config(self) -> GitStorageOptions: ...
 ```
 

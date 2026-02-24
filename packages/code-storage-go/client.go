@@ -167,7 +167,7 @@ func (c *Client) CreateRepo(ctx context.Context, options CreateRepoOptions) (*Re
 	if resolvedDefaultBranch == "" {
 		resolvedDefaultBranch = "main"
 	}
-	return c.HydrateRepo(HydrateRepoOptions{
+	return c.Repo(RepoOptions{
 		ID:            repoID,
 		DefaultBranch: resolvedDefaultBranch,
 		CreatedAt:     time.Now().UTC().Format(time.RFC3339),
@@ -258,17 +258,17 @@ func (c *Client) FindOne(ctx context.Context, options FindOneOptions) (*Repo, er
 	if defaultBranch == "" {
 		defaultBranch = "main"
 	}
-	return c.HydrateRepo(HydrateRepoOptions{
+	return c.Repo(RepoOptions{
 		ID:            options.ID,
 		DefaultBranch: defaultBranch,
 		CreatedAt:     payload.CreatedAt,
 	})
 }
 
-// HydrateRepo creates a repo handle from known metadata without making an HTTP request.
-func (c *Client) HydrateRepo(options HydrateRepoOptions) (*Repo, error) {
+// Repo creates a repo handle from known metadata without making an HTTP request.
+func (c *Client) Repo(options RepoOptions) (*Repo, error) {
 	if strings.TrimSpace(options.ID) == "" {
-		return nil, errors.New("hydrateRepo id is required")
+		return nil, errors.New("repo id is required")
 	}
 
 	defaultBranch := options.DefaultBranch
@@ -282,6 +282,11 @@ func (c *Client) HydrateRepo(options HydrateRepoOptions) (*Repo, error) {
 		CreatedAt:     options.CreatedAt,
 		client:        c,
 	}, nil
+}
+
+// HydrateRepo is a deprecated alias for Repo.
+func (c *Client) HydrateRepo(options HydrateRepoOptions) (*Repo, error) {
+	return c.Repo(options)
 }
 
 // DeleteRepo deletes a repository by ID.
