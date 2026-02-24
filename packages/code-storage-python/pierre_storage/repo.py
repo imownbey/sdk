@@ -1,7 +1,7 @@
 """Repository implementation for Pierre Git Storage SDK."""
 
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from types import TracebackType
 from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import urlencode
@@ -45,6 +45,7 @@ from pierre_storage.types import (
 from pierre_storage.version import get_user_agent
 
 DEFAULT_TOKEN_TTL_SECONDS = 3600  # 1 hour
+ZERO_DATETIME_UTC = datetime.min.replace(tzinfo=timezone.utc)
 
 
 class StreamingResponse:
@@ -400,11 +401,15 @@ class RepoImpl:
 
             commits: Dict[str, CommitMetadata] = {}
             for sha, commit in data["commits"].items():
-                parsed_date = datetime.fromisoformat(commit["date"].replace("Z", "+00:00"))
+                raw_date = commit["date"]
+                try:
+                    parsed_date = datetime.fromisoformat(raw_date.replace("Z", "+00:00"))
+                except (AttributeError, TypeError, ValueError):
+                    parsed_date = ZERO_DATETIME_UTC
                 commits[sha] = {
                     "author": commit["author"],
                     "date": parsed_date,
-                    "raw_date": commit["date"],
+                    "raw_date": raw_date,
                     "message": commit["message"],
                 }
 

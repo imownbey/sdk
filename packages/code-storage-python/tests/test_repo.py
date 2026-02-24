@@ -1,6 +1,6 @@
 """Tests for Repo operations."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
@@ -340,6 +340,53 @@ class TestRepoFileOperations:
             assert parsed.path.endswith("/repos/files/metadata")
             assert params.get("ephemeral") == ["true"]
             assert params.get("ref") == ["feature/demo"]
+
+    @pytest.mark.asyncio
+    async def test_list_files_with_metadata_invalid_commit_date_fallback(
+        self, git_storage_options: dict
+    ) -> None:
+        """Ensure invalid commit dates do not fail metadata listing."""
+        storage = GitStorage(git_storage_options)
+
+        create_response = MagicMock()
+        create_response.status_code = 200
+        create_response.is_success = True
+        create_response.json.return_value = {"repo_id": "test-repo"}
+
+        list_response = MagicMock()
+        list_response.status_code = 200
+        list_response.is_success = True
+        list_response.json.return_value = {
+            "files": [
+                {
+                    "path": "README.md",
+                    "mode": "100644",
+                    "size": 12,
+                    "last_commit_sha": "deadbeef",
+                }
+            ],
+            "commits": {
+                "deadbeef": {
+                    "author": "Test User",
+                    "date": "not-a-date",
+                    "message": "initial commit",
+                }
+            },
+            "ref": "main",
+        }
+
+        with patch("httpx.AsyncClient") as mock_client:
+            client_instance = mock_client.return_value.__aenter__.return_value
+            client_instance.post = AsyncMock(return_value=create_response)
+            client_instance.get = AsyncMock(return_value=list_response)
+
+            repo = await storage.create_repo(id="test-repo")
+            result = await repo.list_files_with_metadata()
+
+            assert result["commits"]["deadbeef"]["raw_date"] == "not-a-date"
+            assert result["commits"]["deadbeef"]["date"] == datetime.min.replace(
+                tzinfo=timezone.utc
+            )
 
     @pytest.mark.asyncio
     async def test_grep_posts_body_and_parses_response(self, git_storage_options: dict) -> None:
