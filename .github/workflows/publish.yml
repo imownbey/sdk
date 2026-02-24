@@ -5,7 +5,11 @@ on:
     branches:
       - main
   workflow_dispatch:
-
+  
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+  
 concurrency:
   group: publish-sdks-${{ github.ref }}
   cancel-in-progress: false
@@ -56,8 +60,6 @@ jobs:
         if: steps.check.outputs.publish == 'true'
         working-directory: packages/code-storage-typescript
         run: pnpm publish --no-git-checks --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-python:
     name: Publish Python SDK to PyPI
