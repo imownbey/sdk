@@ -870,11 +870,11 @@ describe('GitStorage', () => {
     });
   });
 
-  describe('hydrateRepo', () => {
-    it('should hydrate repo metadata without making HTTP requests', async () => {
+  describe('repo', () => {
+    it('should create repo metadata without making HTTP requests', async () => {
       const store = new GitStorage({ name: 'v0', key });
 
-      const repo = store.hydrateRepo({
+      const repo = store.repo({
         id: 'known-repo-id',
         defaultBranch: 'develop',
         createdAt: '2024-06-15T12:00:00Z',
@@ -892,24 +892,33 @@ describe('GitStorage', () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('should default hydrateRepo metadata fields when omitted', () => {
+    it('should default repo metadata fields when omitted', () => {
       const store = new GitStorage({ name: 'v0', key });
-      const repo = store.hydrateRepo({ id: 'known-repo-id' });
+      const repo = store.repo({ id: 'known-repo-id' });
 
       expect(repo.id).toBe('known-repo-id');
       expect(repo.defaultBranch).toBe('main');
       expect(repo.createdAt).toBe('');
     });
 
-    it('should reject hydrateRepo when id is empty', () => {
+    it('should reject repo when id is empty', () => {
       const store = new GitStorage({ name: 'v0', key });
 
-      expect(() => store.hydrateRepo({ id: '' })).toThrow(
-        'hydrateRepo requires a non-empty repository id.'
+      expect(() => store.repo({ id: '' })).toThrow(
+        'repo requires a non-empty repository id.'
       );
-      expect(() => store.hydrateRepo({ id: '   ' })).toThrow(
-        'hydrateRepo requires a non-empty repository id.'
+      expect(() => store.repo({ id: '   ' })).toThrow(
+        'repo requires a non-empty repository id.'
       );
+    });
+
+    it('should keep hydrateRepo as a compatibility alias', () => {
+      const store = new GitStorage({ name: 'v0', key });
+      const repo = store.hydrateRepo({ id: 'known-repo-id' });
+
+      expect(repo.id).toBe('known-repo-id');
+      expect(repo.defaultBranch).toBe('main');
+      expect(repo.createdAt).toBe('');
     });
   });
 

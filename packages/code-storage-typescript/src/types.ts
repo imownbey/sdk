@@ -84,11 +84,13 @@ export interface FindOneOptions {
   id: string;
 }
 
-export interface HydrateRepoOptions {
+export interface RepoOptions {
   id: string;
   defaultBranch?: string;
   createdAt?: string;
 }
+
+export type HydrateRepoOptions = RepoOptions;
 
 export type SupportedRepoProvider = 'github';
 

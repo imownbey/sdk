@@ -62,7 +62,6 @@ import type {
   GetNoteResult,
   GetRemoteURLOptions,
   GitStorageOptions,
-  HydrateRepoOptions,
   GrepFileMatch,
   GrepLine,
   GrepOptions,
@@ -85,6 +84,7 @@ import type {
   RawFileDiff,
   RawFilteredFile,
   RefUpdate,
+  RepoOptions,
   Repo,
   RestoreCommitOptions,
   RestoreCommitResult,
@@ -1394,7 +1394,7 @@ export class GitStorage {
       throw new Error('Repository already exists');
     }
 
-    return this.hydrateRepo({
+    return this.repo({
       id: repoId,
       defaultBranch: resolvedDefaultBranch ?? 'main',
       createdAt: new Date().toISOString(),
@@ -1455,7 +1455,7 @@ export class GitStorage {
     const defaultBranch = body.default_branch ?? 'main';
     const createdAt = body.created_at ?? '';
 
-    return this.hydrateRepo({
+    return this.repo({
       id: options.id,
       defaultBranch,
       createdAt,
@@ -1465,9 +1465,9 @@ export class GitStorage {
   /**
    * Create a Repo handle from known metadata without making an HTTP request.
    */
-  hydrateRepo(options: HydrateRepoOptions): Repo {
+  repo(options: RepoOptions): Repo {
     if (!options || typeof options.id !== 'string' || options.id.trim() === '') {
-      throw new Error('hydrateRepo requires a non-empty repository id.');
+      throw new Error('repo requires a non-empty repository id.');
     }
 
     return new RepoImpl(
@@ -1477,6 +1477,13 @@ export class GitStorage {
       this.options,
       this.generateJWT.bind(this)
     );
+  }
+
+  /**
+   * @deprecated Use repo(options) instead.
+   */
+  hydrateRepo(options: RepoOptions): Repo {
+    return this.repo(options);
   }
 
   /**
