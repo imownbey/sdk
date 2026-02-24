@@ -90,8 +90,6 @@ export interface RepoOptions {
   createdAt?: string;
 }
 
-export type HydrateRepoOptions = RepoOptions;
-
 export type SupportedRepoProvider = 'github';
 
 export interface PublicGitHubBaseRepoAuth {

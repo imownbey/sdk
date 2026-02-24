@@ -912,14 +912,6 @@ describe('GitStorage', () => {
       );
     });
 
-    it('should keep hydrateRepo as a compatibility alias', () => {
-      const store = new GitStorage({ name: 'v0', key });
-      const repo = store.hydrateRepo({ id: 'known-repo-id' });
-
-      expect(repo.id).toBe('known-repo-id');
-      expect(repo.defaultBranch).toBe('main');
-      expect(repo.createdAt).toBe('');
-    });
   });
 
   describe('findOne', () => {

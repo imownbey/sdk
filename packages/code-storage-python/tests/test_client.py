@@ -358,15 +358,6 @@ class TestGitStorage:
         with pytest.raises(ValueError, match="repo requires a non-empty repository id"):
             storage.repo(id="   ")
 
-    def test_hydrate_repo_alias(self, git_storage_options: dict) -> None:
-        """Test hydrate_repo remains available as a compatibility alias."""
-        storage = GitStorage(git_storage_options)
-
-        repo = storage.hydrate_repo(id="known-repo-id")
-        assert repo.id == "known-repo-id"
-        assert repo.default_branch == "main"
-        assert repo.created_at == ""
-
     @pytest.mark.asyncio
     async def test_find_one(self, git_storage_options: dict) -> None:
         """Test finding a repository."""

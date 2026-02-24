@@ -380,7 +380,6 @@ class GitStorage {
   async createRepo(options?: CreateRepoOptions): Promise<Repo>;
   async findOne(options: FindOneOptions): Promise<Repo | null>;
   repo(options: RepoOptions): Repo;
-  hydrateRepo(options: RepoOptions): Repo; // deprecated alias
   getConfig(): GitStorageOptions;
 }
 ```

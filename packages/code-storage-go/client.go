@@ -284,11 +284,6 @@ func (c *Client) Repo(options RepoOptions) (*Repo, error) {
 	}, nil
 }
 
-// HydrateRepo is a deprecated alias for Repo.
-func (c *Client) HydrateRepo(options HydrateRepoOptions) (*Repo, error) {
-	return c.Repo(options)
-}
-
 // DeleteRepo deletes a repository by ID.
 func (c *Client) DeleteRepo(ctx context.Context, options DeleteRepoOptions) (DeleteRepoResult, error) {
 	if strings.TrimSpace(options.ID) == "" {

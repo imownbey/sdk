@@ -466,21 +466,6 @@ func TestRepoRequiresID(t *testing.T) {
 	}
 }
 
-func TestHydrateRepoAlias(t *testing.T) {
-	client, err := NewClient(Options{Name: "acme", Key: testKey})
-	if err != nil {
-		t.Fatalf("client error: %v", err)
-	}
-
-	repo, err := client.HydrateRepo(HydrateRepoOptions{ID: "known-repo-id"})
-	if err != nil {
-		t.Fatalf("hydrate repo alias error: %v", err)
-	}
-	if repo.ID != "known-repo-id" {
-		t.Fatalf("expected repo id known-repo-id, got %s", repo.ID)
-	}
-}
-
 func TestCreateRepoCreatedAt(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

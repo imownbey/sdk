@@ -1480,13 +1480,6 @@ export class GitStorage {
   }
 
   /**
-   * @deprecated Use repo(options) instead.
-   */
-  hydrateRepo(options: RepoOptions): Repo {
-    return this.repo(options);
-  }
-
-  /**
    * Delete a repository by ID
    * @param options The delete options containing the repo ID
    * @returns The deletion result

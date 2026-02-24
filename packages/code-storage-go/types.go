@@ -53,9 +53,6 @@ type RepoOptions struct {
 	CreatedAt     string
 }
 
-// HydrateRepoOptions is a deprecated alias for RepoOptions.
-type HydrateRepoOptions = RepoOptions
-
 // SupportedRepoProvider lists base repo providers.
 type SupportedRepoProvider string
 

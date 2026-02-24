@@ -352,16 +352,6 @@ class GitStorage:
             created_at=created_at or "",
         )
 
-    def hydrate_repo(
-        self,
-        *,
-        id: str,
-        default_branch: Optional[str] = None,
-        created_at: Optional[str] = None,
-    ) -> Repo:
-        """Deprecated alias for repo()."""
-        return self.repo(id=id, default_branch=default_branch, created_at=created_at)
-
     async def delete_repo(
         self,
         *,
