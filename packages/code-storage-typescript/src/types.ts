@@ -8,11 +8,14 @@ import type {
   ListBranchesResponseRaw,
   ListCommitsResponseRaw,
   ListFilesResponseRaw,
+  ListFilesWithMetadataResponseRaw,
   ListReposResponseRaw,
   NoteReadResponseRaw,
   NoteWriteResponseRaw,
   RawBranchInfo as SchemaRawBranchInfo,
+  RawCommitMetadata as SchemaRawCommitMetadata,
   RawCommitInfo as SchemaRawCommitInfo,
+  RawFileWithMetadata as SchemaRawFileWithMetadata,
   RawFileDiff as SchemaRawFileDiff,
   RawFilteredFile as SchemaRawFilteredFile,
   RawRepoBaseInfo as SchemaRawRepoBaseInfo,
@@ -49,6 +52,9 @@ export interface Repo {
   getFileStream(options: GetFileOptions): Promise<Response>;
   getArchiveStream(options?: ArchiveOptions): Promise<Response>;
   listFiles(options?: ListFilesOptions): Promise<ListFilesResult>;
+  listFilesWithMetadata(
+    options?: ListFilesWithMetadataOptions
+  ): Promise<ListFilesWithMetadataResult>;
   listBranches(options?: ListBranchesOptions): Promise<ListBranchesResult>;
   listCommits(options?: ListCommitsOptions): Promise<ListCommitsResult>;
   getNote(options: GetNoteOptions): Promise<GetNoteResult>;
@@ -193,6 +199,37 @@ export type ListFilesResponse = ListFilesResponseRaw;
 
 export interface ListFilesResult {
   paths: string[];
+  ref: string;
+}
+
+export interface ListFilesWithMetadataOptions extends GitStorageInvocationOptions {
+  ref?: string;
+  ephemeral?: boolean;
+}
+
+export type RawFileWithMetadata = SchemaRawFileWithMetadata;
+
+export interface FileWithMetadata {
+  path: string;
+  mode: string;
+  size: number;
+  lastCommitSha: string;
+}
+
+export type RawCommitMetadata = SchemaRawCommitMetadata;
+
+export interface CommitMetadata {
+  author: string;
+  date: Date;
+  rawDate: string;
+  message: string;
+}
+
+export type ListFilesWithMetadataResponse = ListFilesWithMetadataResponseRaw;
+
+export interface ListFilesWithMetadataResult {
+  files: FileWithMetadata[];
+  commits: Record<string, CommitMetadata>;
   ref: string;
 }
 

@@ -5,6 +5,25 @@ export const listFilesResponseSchema = z.object({
   ref: z.string(),
 });
 
+export const fileWithMetadataRawSchema = z.object({
+  path: z.string(),
+  mode: z.string(),
+  size: z.number(),
+  last_commit_sha: z.string(),
+});
+
+export const commitMetadataRawSchema = z.object({
+  author: z.string(),
+  date: z.string(),
+  message: z.string(),
+});
+
+export const listFilesWithMetadataResponseSchema = z.object({
+  files: z.array(fileWithMetadataRawSchema),
+  commits: z.record(commitMetadataRawSchema),
+  ref: z.string(),
+});
+
 export const branchInfoSchema = z.object({
   cursor: z.string(),
   name: z.string(),
@@ -202,6 +221,11 @@ export const errorEnvelopeSchema = z.object({
 });
 
 export type ListFilesResponseRaw = z.infer<typeof listFilesResponseSchema>;
+export type RawFileWithMetadata = z.infer<typeof fileWithMetadataRawSchema>;
+export type RawCommitMetadata = z.infer<typeof commitMetadataRawSchema>;
+export type ListFilesWithMetadataResponseRaw = z.infer<
+  typeof listFilesWithMetadataResponseSchema
+>;
 export type RawBranchInfo = z.infer<typeof branchInfoSchema>;
 export type ListBranchesResponseRaw = z.infer<
   typeof listBranchesResponseSchema

@@ -182,6 +182,13 @@ const files = await repo.listFiles({
 });
 console.log(files.paths); // Array of file paths
 
+// List files with mode/size and last commit metadata
+const metadata = await repo.listFilesWithMetadata({
+  ref: 'main',
+});
+console.log(metadata.files[0].lastCommitSha);
+console.log(metadata.commits[metadata.files[0].lastCommitSha].author);
+
 // List branches
 const branches = await repo.listBranches({
   limit: 10,
@@ -431,6 +438,9 @@ interface Repo {
   getFileStream(options: GetFileOptions): Promise<Response>;
   getArchiveStream(options?: ArchiveOptions): Promise<Response>;
   listFiles(options?: ListFilesOptions): Promise<ListFilesResult>;
+  listFilesWithMetadata(
+    options?: ListFilesWithMetadataOptions
+  ): Promise<ListFilesWithMetadataResult>;
   listBranches(options?: ListBranchesOptions): Promise<ListBranchesResult>;
   listCommits(options?: ListCommitsOptions): Promise<ListCommitsResult>;
   getNote(options: GetNoteOptions): Promise<GetNoteResult>;
@@ -467,6 +477,7 @@ interface ArchiveOptions {
 
 interface ListFilesOptions {
   ref?: string; // Branch, tag, or commit SHA
+  ephemeral?: boolean; // Resolve ref in ephemeral namespace
   ttl?: number;
 }
 
@@ -477,6 +488,32 @@ interface ListFilesResponse {
 
 interface ListFilesResult {
   paths: string[];
+  ref: string;
+}
+
+interface ListFilesWithMetadataOptions {
+  ref?: string; // Branch, tag, or commit SHA
+  ephemeral?: boolean; // Resolve ref in ephemeral namespace
+  ttl?: number;
+}
+
+interface FileWithMetadata {
+  path: string;
+  mode: string;
+  size: number;
+  lastCommitSha: string;
+}
+
+interface CommitMetadata {
+  author: string;
+  date: Date;
+  rawDate: string;
+  message: string;
+}
+
+interface ListFilesWithMetadataResult {
+  files: FileWithMetadata[];
+  commits: Record<string, CommitMetadata>;
   ref: string;
 }
 

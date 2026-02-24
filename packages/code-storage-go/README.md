@@ -53,6 +53,23 @@ if err != nil {
 defer resp.Body.Close()
 ```
 
+### List files with metadata
+
+```go
+flag := true
+result, err := repo.ListFilesWithMetadata(context.Background(), storage.ListFilesWithMetadataOptions{
+	Ref:       "feature/demo",
+	Ephemeral: &flag,
+})
+if err != nil {
+	log.Fatal(err)
+}
+
+fmt.Println(result.Ref)
+fmt.Println(result.Files[0].LastCommitSHA)
+fmt.Println(result.Commits[result.Files[0].LastCommitSHA].Author)
+```
+
 ### Create a commit
 
 ```go
@@ -133,7 +150,7 @@ Make sure the version in `version.go` (`PackageVersion`) matches the tag before 
 
 - Create, list, find, and delete repositories.
 - Generate authenticated git remote URLs.
-- Read files, download archives, list branches/commits, and run grep queries.
+- Read files, read file metadata, download archives, list branches/commits, and run grep queries.
 - Create commits via streaming commit-pack or diff-commit endpoints.
 - Restore commits, manage git notes, and create branches.
 - Validate webhook signatures and parse push events.

@@ -5,6 +5,25 @@ type listFilesResponse struct {
 	Ref   string   `json:"ref"`
 }
 
+type listFilesWithMetadataResponse struct {
+	Files   []fileWithMetadataRaw        `json:"files"`
+	Commits map[string]commitMetadataRaw `json:"commits"`
+	Ref     string                       `json:"ref"`
+}
+
+type fileWithMetadataRaw struct {
+	Path          string `json:"path"`
+	Mode          string `json:"mode"`
+	Size          int64  `json:"size"`
+	LastCommitSHA string `json:"last_commit_sha"`
+}
+
+type commitMetadataRaw struct {
+	Author  string `json:"author"`
+	Date    string `json:"date"`
+	Message string `json:"message"`
+}
+
 type listBranchesResponse struct {
 	Branches   []branchInfoRaw `json:"branches"`
 	NextCursor string          `json:"next_cursor"`

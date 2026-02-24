@@ -49,6 +49,9 @@ func TestEphemeralRemoteURL(t *testing.T) {
 
 func TestListFilesEphemeral(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/files" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		q := r.URL.Query()
 		if q.Get("ref") != "feature/demo" || q.Get("ephemeral") != "true" {
 			t.Fatalf("unexpected query: %s", r.URL.RawQuery)
@@ -74,8 +77,57 @@ func TestListFilesEphemeral(t *testing.T) {
 	}
 }
 
+func TestListFilesWithMetadataEphemeral(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/files/metadata" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		q := r.URL.Query()
+		if q.Get("ref") != "feature/demo" || q.Get("ephemeral") != "true" {
+			t.Fatalf("unexpected query: %s", r.URL.RawQuery)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"files":[{"path":"docs/readme.md","mode":"100644","size":12,"last_commit_sha":"deadbeef"}],"commits":{"deadbeef":{"author":"Test User","date":"2026-02-19T12:00:00Z","message":"initial commit"}},"ref":"refs/namespaces/ephemeral/refs/heads/feature/demo"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+
+	flag := true
+	result, err := repo.ListFilesWithMetadata(nil, ListFilesWithMetadataOptions{Ref: "feature/demo", Ephemeral: &flag})
+	if err != nil {
+		t.Fatalf("list files with metadata error: %v", err)
+	}
+	if result.Ref == "" || len(result.Files) != 1 {
+		t.Fatalf("unexpected result")
+	}
+	if result.Files[0].LastCommitSHA != "deadbeef" {
+		t.Fatalf("unexpected last commit sha: %s", result.Files[0].LastCommitSHA)
+	}
+	commit, ok := result.Commits["deadbeef"]
+	if !ok {
+		t.Fatalf("expected commit metadata")
+	}
+	if commit.Author != "Test User" || commit.Message != "initial commit" {
+		t.Fatalf("unexpected commit metadata: %+v", commit)
+	}
+	if commit.RawDate != "2026-02-19T12:00:00Z" {
+		t.Fatalf("unexpected raw date: %s", commit.RawDate)
+	}
+	if commit.Date.IsZero() {
+		t.Fatalf("expected parsed commit date")
+	}
+}
+
 func TestGrepRequestBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/grep" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		var body map[string]interface{}
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body["ref"] != "main" {
@@ -104,6 +156,9 @@ func TestGrepRequestBody(t *testing.T) {
 
 func TestGrepRequestLegacyRev(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/grep" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		var body map[string]interface{}
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body["ref"] != "main" {
@@ -134,6 +189,9 @@ func TestGrepRequestLegacyRev(t *testing.T) {
 
 func TestCreateBranchTTL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/branches/create" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		claims := parseJWTFromToken(t, token)
 		exp := int64(claims["exp"].(float64))
@@ -160,6 +218,9 @@ func TestCreateBranchTTL(t *testing.T) {
 
 func TestRestoreCommitConflict(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/restore-commit" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		w.WriteHeader(http.StatusConflict)
 		payload := map[string]interface{}{
 			"commit": map[string]interface{}{
@@ -203,6 +264,9 @@ func TestRestoreCommitConflict(t *testing.T) {
 func TestNoteWritePayload(t *testing.T) {
 	var captured []byte
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/notes" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		captured, _ = io.ReadAll(r.Body)
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"sha":"abc","target_ref":"refs/notes/commits","new_ref_sha":"def","result":{"success":true,"status":"ok"}}`))
@@ -229,6 +293,9 @@ func TestNoteWritePayload(t *testing.T) {
 
 func TestCommitDiffQuery(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/diff" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		q := r.URL.Query()
 		if q.Get("sha") != "abc" || q.Get("baseSha") != "base" {
 			t.Fatalf("unexpected query: %s", r.URL.RawQuery)
@@ -313,6 +380,9 @@ func TestRemoteURLDefaultTTL(t *testing.T) {
 
 func TestListFilesTTL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/files" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		claims := parseJWTFromToken(t, token)
 		exp := int64(claims["exp"].(float64))
@@ -337,8 +407,40 @@ func TestListFilesTTL(t *testing.T) {
 	}
 }
 
+func TestListFilesWithMetadataTTL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/files/metadata" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		claims := parseJWTFromToken(t, token)
+		exp := int64(claims["exp"].(float64))
+		iat := int64(claims["iat"].(float64))
+		if exp-iat != 900 {
+			t.Fatalf("expected ttl 900, got %d", exp-iat)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"files":[],"commits":{},"ref":"main"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+
+	_, err = repo.ListFilesWithMetadata(nil, ListFilesWithMetadataOptions{InvocationOptions: InvocationOptions{TTL: 900 * time.Second}})
+	if err != nil {
+		t.Fatalf("list files with metadata error: %v", err)
+	}
+}
+
 func TestGrepResponseParsing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/grep" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"query":{"pattern":"SEARCHME","case_sensitive":false},"repo":{"ref":"main","commit":"deadbeef"},"matches":[{"path":"src/a.ts","lines":[{"line_number":12,"text":"SEARCHME","type":"match"}]}],"has_more":false}`))
 	}))
@@ -387,6 +489,9 @@ func TestGrepResponseParsing(t *testing.T) {
 
 func TestCreateBranchPayloadAndResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/branches/create" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		headerAgent := r.Header.Get("Code-Storage-Agent")
 		if headerAgent == "" || !strings.Contains(headerAgent, "code-storage-go-sdk/") {
 			t.Fatalf("missing Code-Storage-Agent header")
@@ -429,6 +534,9 @@ func TestCreateBranchPayloadAndResponse(t *testing.T) {
 func TestRestoreCommitSuccess(t *testing.T) {
 	var capturedBody map[string]interface{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/restore-commit" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		_ = json.NewDecoder(r.Body).Decode(&capturedBody)
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"commit":{"commit_sha":"abcdef0123456789abcdef0123456789abcdef01","tree_sha":"fedcba9876543210fedcba9876543210fedcba98","target_branch":"main","pack_bytes":1024},"result":{"branch":"main","old_sha":"0123456789abcdef0123456789abcdef01234567","new_sha":"89abcdef0123456789abcdef0123456789abcdef","success":true,"status":"ok"}}`))
@@ -473,6 +581,9 @@ func TestRestoreCommitSuccess(t *testing.T) {
 
 func TestRestoreCommitPreconditionFailed(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/restore-commit" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		w.WriteHeader(http.StatusPreconditionFailed)
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"commit":null,"result":{"success":false,"status":"precondition_failed","message":"expected head SHA mismatch"}}`))
@@ -505,6 +616,9 @@ func TestRestoreCommitPreconditionFailed(t *testing.T) {
 
 func TestRestoreCommitNotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/restore-commit" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		w.WriteHeader(http.StatusNotFound)
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"error":"not found"}`))
@@ -530,6 +644,9 @@ func TestRestoreCommitNotFound(t *testing.T) {
 func TestNoteWriteAppendAndDelete(t *testing.T) {
 	var requests []map[string]interface{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/notes" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		var payload map[string]interface{}
 		_ = json.NewDecoder(r.Body).Decode(&payload)
 		requests = append(requests, payload)
@@ -564,6 +681,9 @@ func TestNoteWriteAppendAndDelete(t *testing.T) {
 
 func TestGetNote(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/notes" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		q := r.URL.Query()
 		if q.Get("sha") != "abc123" {
 			t.Fatalf("unexpected sha query: %s", q.Get("sha"))
@@ -590,6 +710,9 @@ func TestGetNote(t *testing.T) {
 
 func TestFileStreamEphemeral(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/file" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		q := r.URL.Query()
 		if q.Get("path") != "docs/readme.md" {
 			t.Fatalf("unexpected path")
@@ -621,6 +744,9 @@ func TestFileStreamEphemeral(t *testing.T) {
 
 func TestFileStreamEphemeralBase(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/file" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		q := r.URL.Query()
 		if q.Get("ephemeral_base") != "true" {
 			t.Fatalf("unexpected ephemeral_base")
@@ -646,6 +772,9 @@ func TestFileStreamEphemeralBase(t *testing.T) {
 
 func TestArchiveStream(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/archive" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		if r.Method != http.MethodPost {
 			t.Fatalf("unexpected method: %s", r.Method)
 		}
@@ -690,6 +819,9 @@ func TestArchiveStream(t *testing.T) {
 
 func TestListCommitsDateParsing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/commits" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"commits":[{"sha":"abc123","message":"feat: add endpoint","author_name":"Jane Doe","author_email":"jane@example.com","committer_name":"Jane Doe","committer_email":"jane@example.com","date":"2024-01-15T14:32:18Z"}],"has_more":false}`))
 	}))
@@ -720,6 +852,9 @@ func TestListCommitsDateParsing(t *testing.T) {
 func TestListCommitsUserAgentHeader(t *testing.T) {
 	var headerAgent string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/commits" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		headerAgent = r.Header.Get("Code-Storage-Agent")
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"commits":[],"has_more":false}`))
