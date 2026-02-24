@@ -1,6 +1,6 @@
 {
 	"name": "@pierre/storage",
-	"version": "1.0.3",
+	"version": "1.1.0",
 	"description": "Pierre Git Storage SDK",
 	"license": "MIT",
 	"type": "module",
