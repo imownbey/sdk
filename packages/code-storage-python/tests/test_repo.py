@@ -8,8 +8,8 @@ import jwt
 import pytest
 
 from pierre_storage import GitStorage
-from pierre_storage.version import get_user_agent
 from pierre_storage.errors import ApiError, RefUpdateError
+from pierre_storage.version import get_user_agent
 
 
 class TestRepoFileOperations:
