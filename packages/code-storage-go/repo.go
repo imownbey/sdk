@@ -176,6 +176,60 @@ func (r *Repo) ListFiles(ctx context.Context, options ListFilesOptions) (ListFil
 	return ListFilesResult{Paths: payload.Paths, Ref: payload.Ref}, nil
 }
 
+// ListFilesWithMetadata lists files with mode/size and last commit metadata.
+func (r *Repo) ListFilesWithMetadata(ctx context.Context, options ListFilesWithMetadataOptions) (ListFilesWithMetadataResult, error) {
+	ttl := resolveInvocationTTL(options.InvocationOptions, defaultTokenTTL)
+	jwtToken, err := r.client.generateJWT(r.ID, RemoteURLOptions{Permissions: []Permission{PermissionGitRead}, TTL: ttl})
+	if err != nil {
+		return ListFilesWithMetadataResult{}, err
+	}
+
+	params := url.Values{}
+	if options.Ref != "" {
+		params.Set("ref", options.Ref)
+	}
+	if options.Ephemeral != nil {
+		params.Set("ephemeral", strconv.FormatBool(*options.Ephemeral))
+	}
+	if len(params) == 0 {
+		params = nil
+	}
+
+	resp, err := r.client.api.get(ctx, "repos/files/metadata", params, jwtToken, nil)
+	if err != nil {
+		return ListFilesWithMetadataResult{}, err
+	}
+	defer resp.Body.Close()
+
+	var payload listFilesWithMetadataResponse
+	if err := decodeJSON(resp, &payload); err != nil {
+		return ListFilesWithMetadataResult{}, err
+	}
+
+	result := ListFilesWithMetadataResult{
+		Ref:     payload.Ref,
+		Commits: make(map[string]CommitMetadata, len(payload.Commits)),
+	}
+	for _, file := range payload.Files {
+		result.Files = append(result.Files, FileWithMetadata{
+			Path:          file.Path,
+			Mode:          file.Mode,
+			Size:          file.Size,
+			LastCommitSHA: file.LastCommitSHA,
+		})
+	}
+	for sha, commit := range payload.Commits {
+		result.Commits[sha] = CommitMetadata{
+			Author:  commit.Author,
+			Date:    parseTime(commit.Date),
+			RawDate: commit.Date,
+			Message: commit.Message,
+		}
+	}
+
+	return result, nil
+}
+
 // ListBranches lists branches.
 func (r *Repo) ListBranches(ctx context.Context, options ListBranchesOptions) (ListBranchesResult, error) {
 	ttl := resolveInvocationTTL(options.InvocationOptions, defaultTokenTTL)

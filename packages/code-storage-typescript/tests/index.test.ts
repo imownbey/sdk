@@ -411,6 +411,67 @@ describe('GitStorage', () => {
     );
   });
 
+  it('passes ephemeral flag to listFilesWithMetadata and parses commit dates', async () => {
+    const store = new GitStorage({ name: 'v0', key });
+    const repo = await store.createRepo({ id: 'repo-ephemeral-list-meta' });
+
+    mockFetch.mockImplementationOnce((url, init) => {
+      expect(init?.method).toBe('GET');
+      const requestUrl = new URL(url as string);
+      expect(requestUrl.pathname.endsWith('/repos/files/metadata')).toBe(true);
+      expect(requestUrl.searchParams.get('ref')).toBe('feature/demo');
+      expect(requestUrl.searchParams.get('ephemeral')).toBe('true');
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: { get: () => null } as any,
+        json: async () => ({
+          files: [
+            {
+              path: 'docs/readme.md',
+              mode: '100644',
+              size: 12,
+              last_commit_sha: 'deadbeef',
+            },
+          ],
+          commits: {
+            deadbeef: {
+              author: 'Test User',
+              date: '2026-02-19T12:00:00Z',
+              message: 'initial commit',
+            },
+          },
+          ref: 'refs/namespaces/ephemeral/refs/heads/feature/demo',
+        }),
+        text: async () => '',
+      } as any);
+    });
+
+    const result = await repo.listFilesWithMetadata({
+      ref: 'feature/demo',
+      ephemeral: true,
+    });
+
+    expect(result.files).toEqual([
+      {
+        path: 'docs/readme.md',
+        mode: '100644',
+        size: 12,
+        lastCommitSha: 'deadbeef',
+      },
+    ]);
+    expect(result.commits.deadbeef.author).toBe('Test User');
+    expect(result.commits.deadbeef.rawDate).toBe('2026-02-19T12:00:00Z');
+    expect(result.commits.deadbeef.date).toBeInstanceOf(Date);
+    expect(result.commits.deadbeef.date.toISOString()).toBe(
+      '2026-02-19T12:00:00.000Z'
+    );
+    expect(result.ref).toBe(
+      'refs/namespaces/ephemeral/refs/heads/feature/demo'
+    );
+  });
+
   it('posts grep request body and parses response', async () => {
     const store = new GitStorage({ name: 'v0', key });
     const repo = await store.createRepo({ id: 'repo-grep' });
@@ -1657,6 +1718,46 @@ describe('GitStorage', () => {
 
         const repo = await store.createRepo({ id: 'legacy-ttl' });
         await repo.listFiles({ ttl: legacyTTL });
+
+        const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        const init = lastCall?.[1] as RequestInit | undefined;
+        const headers = init?.headers as Record<string, string> | undefined;
+        expect(headers?.Authorization).toBeDefined();
+        const payload = decodeJwtPayload(stripBearer(headers!.Authorization));
+        expect(payload.exp - payload.iat).toBe(legacyTTL);
+      });
+
+      it('uses deprecated ttl when listing files with metadata', async () => {
+        const store = new GitStorage({ name: 'v0', key });
+        const legacyTTL = 900;
+
+        mockFetch.mockImplementationOnce(() =>
+          Promise.resolve({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            json: async () => ({
+              repo_id: 'legacy-ttl-meta',
+              url: 'https://repo.git',
+            }),
+          })
+        );
+
+        mockFetch.mockImplementationOnce(() =>
+          Promise.resolve({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            json: async () => ({
+              files: [],
+              commits: {},
+              ref: 'main',
+            }),
+          })
+        );
+
+        const repo = await store.createRepo({ id: 'legacy-ttl-meta' });
+        await repo.listFilesWithMetadata({ ttl: legacyTTL });
 
         const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
         const init = lastCall?.[1] as RequestInit | undefined;

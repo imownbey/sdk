@@ -74,6 +74,49 @@ func TestListFilesEphemeral(t *testing.T) {
 	}
 }
 
+func TestListFilesWithMetadataEphemeral(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		if q.Get("ref") != "feature/demo" || q.Get("ephemeral") != "true" {
+			t.Fatalf("unexpected query: %s", r.URL.RawQuery)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"files":[{"path":"docs/readme.md","mode":"100644","size":12,"last_commit_sha":"deadbeef"}],"commits":{"deadbeef":{"author":"Test User","date":"2026-02-19T12:00:00Z","message":"initial commit"}},"ref":"refs/namespaces/ephemeral/refs/heads/feature/demo"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+
+	flag := true
+	result, err := repo.ListFilesWithMetadata(nil, ListFilesWithMetadataOptions{Ref: "feature/demo", Ephemeral: &flag})
+	if err != nil {
+		t.Fatalf("list files with metadata error: %v", err)
+	}
+	if result.Ref == "" || len(result.Files) != 1 {
+		t.Fatalf("unexpected result")
+	}
+	if result.Files[0].LastCommitSHA != "deadbeef" {
+		t.Fatalf("unexpected last commit sha: %s", result.Files[0].LastCommitSHA)
+	}
+	commit, ok := result.Commits["deadbeef"]
+	if !ok {
+		t.Fatalf("expected commit metadata")
+	}
+	if commit.Author != "Test User" || commit.Message != "initial commit" {
+		t.Fatalf("unexpected commit metadata: %+v", commit)
+	}
+	if commit.RawDate != "2026-02-19T12:00:00Z" {
+		t.Fatalf("unexpected raw date: %s", commit.RawDate)
+	}
+	if commit.Date.IsZero() {
+		t.Fatalf("expected parsed commit date")
+	}
+}
+
 func TestGrepRequestBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]interface{}
@@ -334,6 +377,32 @@ func TestListFilesTTL(t *testing.T) {
 	_, err = repo.ListFiles(nil, ListFilesOptions{InvocationOptions: InvocationOptions{TTL: 900 * time.Second}})
 	if err != nil {
 		t.Fatalf("list files error: %v", err)
+	}
+}
+
+func TestListFilesWithMetadataTTL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		claims := parseJWTFromToken(t, token)
+		exp := int64(claims["exp"].(float64))
+		iat := int64(claims["iat"].(float64))
+		if exp-iat != 900 {
+			t.Fatalf("expected ttl 900, got %d", exp-iat)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"files":[],"commits":{},"ref":"main"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Options{Name: "acme", Key: testKey, APIBaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+
+	_, err = repo.ListFilesWithMetadata(nil, ListFilesWithMetadataOptions{InvocationOptions: InvocationOptions{TTL: 900 * time.Second}})
+	if err != nil {
+		t.Fatalf("list files with metadata error: %v", err)
 	}
 }
 

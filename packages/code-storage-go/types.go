@@ -184,6 +184,36 @@ type ListFilesResult struct {
 	Ref   string
 }
 
+// ListFilesWithMetadataOptions configures list files with metadata.
+type ListFilesWithMetadataOptions struct {
+	InvocationOptions
+	Ref       string
+	Ephemeral *bool
+}
+
+// FileWithMetadata describes a file metadata entry.
+type FileWithMetadata struct {
+	Path          string
+	Mode          string
+	Size          int64
+	LastCommitSHA string
+}
+
+// CommitMetadata describes commit metadata for the files metadata response.
+type CommitMetadata struct {
+	Author  string
+	Date    time.Time
+	RawDate string
+	Message string
+}
+
+// ListFilesWithMetadataResult describes files metadata response.
+type ListFilesWithMetadataResult struct {
+	Files   []FileWithMetadata
+	Commits map[string]CommitMetadata
+	Ref     string
+}
+
 // ListBranchesOptions configures list branches.
 type ListBranchesOptions struct {
 	InvocationOptions

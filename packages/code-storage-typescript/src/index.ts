@@ -24,6 +24,7 @@ import {
   listBranchesResponseSchema,
   listCommitsResponseSchema,
   listFilesResponseSchema,
+  listFilesWithMetadataResponseSchema,
   listReposResponseSchema,
   noteReadResponseSchema,
   noteWriteResponseSchema,
@@ -36,6 +37,7 @@ import type {
   BranchInfo,
   CommitBuilder,
   CommitInfo,
+  CommitMetadata,
   CommitResult,
   CreateBranchOptions,
   CreateBranchResponse,
@@ -48,6 +50,7 @@ import type {
   DeleteRepoOptions,
   DeleteRepoResult,
   DiffFileState,
+  FileWithMetadata,
   FileDiff,
   FilteredFile,
   FindOneOptions,
@@ -74,13 +77,18 @@ import type {
   ListCommitsResult,
   ListFilesOptions,
   ListFilesResult,
+  ListFilesWithMetadataOptions,
+  ListFilesWithMetadataResponse,
+  ListFilesWithMetadataResult,
   ListReposOptions,
   ListReposResponse,
   ListReposResult,
   NoteWriteResult,
   PullUpstreamOptions,
   RawBranchInfo,
+  RawCommitMetadata,
   RawCommitInfo,
+  RawFileWithMetadata,
   RawFileDiff,
   RawFilteredFile,
   RefUpdate,
@@ -308,6 +316,39 @@ function transformListCommitsResult(
     commits: raw.commits.map(transformCommitInfo),
     nextCursor: raw.next_cursor ?? undefined,
     hasMore: raw.has_more,
+  };
+}
+
+function transformFileWithMetadata(raw: RawFileWithMetadata): FileWithMetadata {
+  return {
+    path: raw.path,
+    mode: raw.mode,
+    size: raw.size,
+    lastCommitSha: raw.last_commit_sha,
+  };
+}
+
+function transformCommitMetadata(raw: RawCommitMetadata): CommitMetadata {
+  return {
+    author: raw.author,
+    date: new Date(raw.date),
+    rawDate: raw.date,
+    message: raw.message,
+  };
+}
+
+function transformListFilesWithMetadataResult(
+  raw: ListFilesWithMetadataResponse
+): ListFilesWithMetadataResult {
+  const commits: Record<string, CommitMetadata> = {};
+  for (const [sha, commit] of Object.entries(raw.commits)) {
+    commits[sha] = transformCommitMetadata(commit);
+  }
+
+  return {
+    files: raw.files.map(transformFileWithMetadata),
+    commits,
+    ref: raw.ref,
   };
 }
 
@@ -674,6 +715,34 @@ class RepoImpl implements Repo {
 
     const raw = listFilesResponseSchema.parse(await response.json());
     return { paths: raw.paths, ref: raw.ref };
+  }
+
+  async listFilesWithMetadata(
+    options?: ListFilesWithMetadataOptions
+  ): Promise<ListFilesWithMetadataResult> {
+    const ttl = resolveInvocationTtlSeconds(options, DEFAULT_TOKEN_TTL_SECONDS);
+    const jwt = await this.generateJWT(this.id, {
+      permissions: ['git:read'],
+      ttl,
+    });
+
+    const params: Record<string, string> = {};
+    if (options?.ref) {
+      params.ref = options.ref;
+    }
+    if (typeof options?.ephemeral === 'boolean') {
+      params.ephemeral = String(options.ephemeral);
+    }
+    const response = await this.api.get(
+      {
+        path: 'repos/files/metadata',
+        params: Object.keys(params).length ? params : undefined,
+      },
+      jwt
+    );
+
+    const raw = listFilesWithMetadataResponseSchema.parse(await response.json());
+    return transformListFilesWithMetadataResult(raw);
   }
 
   async listBranches(

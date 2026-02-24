@@ -22,8 +22,10 @@ from pierre_storage.types import (
     CommitSignature,
     CreateBranchResult,
     CreateCommitOptions,
+    CommitMetadata,
     DiffFileState,
     FileDiff,
+    FileWithMetadata,
     FileSource,
     FilteredFile,
     GetBranchDiffResult,
@@ -34,6 +36,7 @@ from pierre_storage.types import (
     ListBranchesResult,
     ListCommitsResult,
     ListFilesResult,
+    ListFilesWithMetadataResult,
     NoteReadResult,
     NoteWriteResult,
     RefUpdate,
@@ -342,6 +345,70 @@ class RepoImpl:
             response.raise_for_status()
             data = response.json()
             return {"paths": data["paths"], "ref": data["ref"]}
+
+    async def list_files_with_metadata(
+        self,
+        *,
+        ref: Optional[str] = None,
+        ephemeral: Optional[bool] = None,
+        ttl: Optional[int] = None,
+    ) -> ListFilesWithMetadataResult:
+        """List files with metadata in repository.
+
+        Args:
+            ref: Git ref (branch, tag, or commit SHA)
+            ephemeral: Whether to read from the ephemeral namespace
+            ttl: Token TTL in seconds
+
+        Returns:
+            Files with mode/size/last commit metadata and resolved ref
+        """
+        ttl = ttl or DEFAULT_TOKEN_TTL_SECONDS
+        jwt = self.generate_jwt(self._id, {"permissions": ["git:read"], "ttl": ttl})
+
+        params = {}
+        if ref:
+            params["ref"] = ref
+        if ephemeral is not None:
+            params["ephemeral"] = "true" if ephemeral else "false"
+
+        url = f"{self.api_base_url}/api/v{self.api_version}/repos/files/metadata"
+        if params:
+            url += f"?{urlencode(params)}"
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                headers={
+                    "Authorization": f"Bearer {jwt}",
+                    "Code-Storage-Agent": get_user_agent(),
+                },
+                timeout=30.0,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            files: List[FileWithMetadata] = [
+                {
+                    "path": file["path"],
+                    "mode": file["mode"],
+                    "size": file["size"],
+                    "last_commit_sha": file["last_commit_sha"],
+                }
+                for file in data["files"]
+            ]
+
+            commits: Dict[str, CommitMetadata] = {}
+            for sha, commit in data["commits"].items():
+                parsed_date = datetime.fromisoformat(commit["date"].replace("Z", "+00:00"))
+                commits[sha] = {
+                    "author": commit["author"],
+                    "date": parsed_date,
+                    "raw_date": commit["date"],
+                    "message": commit["message"],
+                }
+
+            return {"files": files, "commits": commits, "ref": data["ref"]}
 
     async def list_branches(
         self,

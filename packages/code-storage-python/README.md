@@ -170,6 +170,14 @@ files = await repo.list_files(
 )
 print(files["paths"])  # List of file paths
 
+# List files with mode/size and last-commit metadata
+metadata = await repo.list_files_with_metadata(
+    ref="main",
+    ephemeral=False,
+)
+print(metadata["files"][0]["last_commit_sha"])
+print(metadata["commits"][metadata["files"][0]["last_commit_sha"]]["author"])
+
 # List branches
 branches = await repo.list_branches(
     limit=10,
@@ -608,6 +616,14 @@ class Repo:
         ttl: Optional[int] = None,
     ) -> ListFilesResult: ...
 
+    async def list_files_with_metadata(
+        self,
+        *,
+        ref: Optional[str] = None,
+        ephemeral: Optional[bool] = None,
+        ttl: Optional[int] = None,
+    ) -> ListFilesWithMetadataResult: ...
+
     async def list_branches(
         self,
         *,
@@ -707,6 +723,7 @@ from pierre_storage.types import (
     CommitSignature,
     CreateCommitOptions,
     ListFilesResult,
+    ListFilesWithMetadataResult,
     ListBranchesResult,
     ListCommitsResult,
     GetBranchDiffResult,

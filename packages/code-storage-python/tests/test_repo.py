@@ -1,5 +1,6 @@
 """Tests for Repo operations."""
 
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
@@ -278,6 +279,65 @@ class TestRepoFileOperations:
             called_url = client_instance.get.call_args.args[0]
             parsed = urlparse(called_url)
             params = parse_qs(parsed.query)
+            assert params.get("ephemeral") == ["true"]
+            assert params.get("ref") == ["feature/demo"]
+
+    @pytest.mark.asyncio
+    async def test_list_files_with_metadata_ephemeral_flag(
+        self, git_storage_options: dict
+    ) -> None:
+        """Ensure ephemeral flag propagates to list files with metadata."""
+        storage = GitStorage(git_storage_options)
+
+        create_response = MagicMock()
+        create_response.status_code = 200
+        create_response.is_success = True
+        create_response.json.return_value = {"repo_id": "test-repo"}
+
+        list_response = MagicMock()
+        list_response.status_code = 200
+        list_response.is_success = True
+        list_response.json.return_value = {
+            "files": [
+                {
+                    "path": "README.md",
+                    "mode": "100644",
+                    "size": 12,
+                    "last_commit_sha": "deadbeef",
+                }
+            ],
+            "commits": {
+                "deadbeef": {
+                    "author": "Test User",
+                    "date": "2026-02-19T12:00:00Z",
+                    "message": "initial commit",
+                }
+            },
+            "ref": "refs/namespaces/ephemeral/refs/heads/feature/demo",
+        }
+
+        with patch("httpx.AsyncClient") as mock_client:
+            client_instance = mock_client.return_value.__aenter__.return_value
+            client_instance.post = AsyncMock(return_value=create_response)
+            client_instance.get = AsyncMock(return_value=list_response)
+
+            repo = await storage.create_repo(id="test-repo")
+            result = await repo.list_files_with_metadata(ref="feature/demo", ephemeral=True)
+
+            assert result["files"][0]["path"] == "README.md"
+            assert result["files"][0]["mode"] == "100644"
+            assert result["files"][0]["size"] == 12
+            assert result["files"][0]["last_commit_sha"] == "deadbeef"
+            assert result["commits"]["deadbeef"]["author"] == "Test User"
+            assert result["commits"]["deadbeef"]["raw_date"] == "2026-02-19T12:00:00Z"
+            assert result["commits"]["deadbeef"]["message"] == "initial commit"
+            assert isinstance(result["commits"]["deadbeef"]["date"], datetime)
+            assert result["ref"] == "refs/namespaces/ephemeral/refs/heads/feature/demo"
+
+            called_url = client_instance.get.call_args.args[0]
+            parsed = urlparse(called_url)
+            params = parse_qs(parsed.query)
+            assert parsed.path.endswith("/repos/files/metadata")
             assert params.get("ephemeral") == ["true"]
             assert params.get("ref") == ["feature/demo"]
 
@@ -1424,6 +1484,54 @@ class TestCodeStorageAgentHeaderInRepo:
             await repo.list_files()
 
             # Verify headers include Code-Storage-Agent
+            assert captured_headers is not None
+            assert "Code-Storage-Agent" in captured_headers
+            assert captured_headers["Code-Storage-Agent"] == get_user_agent()
+
+    @pytest.mark.asyncio
+    async def test_list_files_with_metadata_includes_agent_header(
+        self, git_storage_options: dict
+    ) -> None:
+        """Test that list_files_with_metadata includes Code-Storage-Agent header."""
+        storage = GitStorage(git_storage_options)
+
+        mock_response = MagicMock()
+        mock_response.json = MagicMock(
+            return_value={"repo_id": "test-repo", "url": "https://example.com/repo.git"}
+        )
+        mock_response.status_code = 200
+        mock_response.is_success = True
+
+        list_response = MagicMock()
+        list_response.json = MagicMock(
+            return_value={
+                "files": [],
+                "commits": {},
+                "ref": "main",
+            }
+        )
+        list_response.status_code = 200
+        list_response.is_success = True
+        list_response.raise_for_status = MagicMock()
+
+        captured_headers = None
+
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_get = AsyncMock(return_value=list_response)
+
+            async def capture_get(*args, **kwargs):
+                nonlocal captured_headers
+                captured_headers = kwargs.get("headers")
+                return await mock_get(*args, **kwargs)
+
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                return_value=mock_response
+            )
+            mock_client.return_value.__aenter__.return_value.get = capture_get
+
+            repo = await storage.create_repo(id="test-repo")
+            await repo.list_files_with_metadata()
+
             assert captured_headers is not None
             assert "Code-Storage-Agent" in captured_headers
             assert captured_headers["Code-Storage-Agent"] == get_user_agent()
