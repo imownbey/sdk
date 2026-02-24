@@ -1,0 +1,164 @@
+name: Publish SDKs
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+  
+concurrency:
+  group: publish-sdks-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-typescript:
+    name: Publish TypeScript SDK to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Check npm for current version
+        id: check
+        working-directory: packages/code-storage-typescript
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            PUBLISH=false
+            echo "${NAME}@${VERSION} already exists on npm; skipping publish."
+          else
+            PUBLISH=true
+            echo "${NAME}@${VERSION} not found on npm; publishing."
+          fi
+
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "publish=${PUBLISH}" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        if: steps.check.outputs.publish == 'true'
+        working-directory: packages/code-storage-typescript
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish to npm
+        if: steps.check.outputs.publish == 'true'
+        working-directory: packages/code-storage-typescript
+        run: pnpm publish --no-git-checks --access public
+
+  publish-python:
+    name: Publish Python SDK to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check PyPI for current version
+        id: check
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import tomllib
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          pyproject = Path('packages/code-storage-python/pyproject.toml')
+          data = tomllib.loads(pyproject.read_text())
+          name = data['project']['name']
+          version = data['project']['version']
+
+          publish = True
+          url = f'https://pypi.org/pypi/{name}/json'
+
+          try:
+              with urllib.request.urlopen(url) as response:
+                  payload = json.load(response)
+              publish = version not in payload.get('releases', {})
+          except urllib.error.HTTPError as exc:
+              if exc.code != 404:
+                  raise
+              publish = True
+
+          print(f'{name}=={version} publish={publish}')
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'name={name}\n')
+              output.write(f'version={version}\n')
+              output.write(f"publish={'true' if publish else 'false'}\n")
+          PY
+
+      - name: Install build tooling
+        if: steps.check.outputs.publish == 'true'
+        run: python -m pip install --upgrade pip build twine
+
+      - name: Build distribution
+        if: steps.check.outputs.publish == 'true'
+        working-directory: packages/code-storage-python
+        run: python -m build
+
+      - name: Publish to PyPI
+        if: steps.check.outputs.publish == 'true'
+        working-directory: packages/code-storage-python
+        run: python -m twine upload --skip-existing dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+  publish-go:
+    name: Publish Go SDK tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          VERSION=$(grep -E '^const PackageVersion = "[^"]+"' packages/code-storage-go/version.go | sed -E 's/^const PackageVersion = "([^"]+)"/\1/')
+          TAG="packages/code-storage-go/v${VERSION}"
+
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}$"; then
+            SHOULD_TAG=false
+            echo "Tag ${TAG} already exists; skipping."
+          else
+            SHOULD_TAG=true
+            echo "Tag ${TAG} missing; creating and pushing."
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "should_tag=${SHOULD_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        if: steps.tag.outputs.should_tag == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git tag "${{ steps.tag.outputs.tag }}"
+          git push origin "${{ steps.tag.outputs.tag }}"
