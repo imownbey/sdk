@@ -69,6 +69,22 @@ if found_repo:
     print(f"Repository URL: {url}")
 ```
 
+### Hydrating a Repository Without a Request
+
+If you already know the repo metadata, you can construct a `Repo` directly:
+
+```python
+repo = storage.hydrate_repo(
+    id="repo-id",
+    default_branch="main",
+    created_at="2024-06-15T12:00:00Z",
+)
+
+# No HTTP request is made by hydrate_repo()
+url = await repo.get_remote_url()
+print(url)
+```
+
 ### Grep
 
 ```python
@@ -534,6 +550,13 @@ class GitStorage:
         ttl: Optional[int] = None,
     ) -> Repo: ...
     async def find_one(self, *, id: str) -> Optional[Repo]: ...
+    def hydrate_repo(
+        self,
+        *,
+        id: str,
+        default_branch: Optional[str] = None,  # defaults to "main"
+        created_at: Optional[str] = None,  # defaults to ""
+    ) -> Repo: ...
     def get_config(self) -> GitStorageOptions: ...
 ```
 

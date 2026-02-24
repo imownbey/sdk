@@ -167,7 +167,11 @@ func (c *Client) CreateRepo(ctx context.Context, options CreateRepoOptions) (*Re
 	if resolvedDefaultBranch == "" {
 		resolvedDefaultBranch = "main"
 	}
-	return &Repo{ID: repoID, DefaultBranch: resolvedDefaultBranch, CreatedAt: time.Now().UTC().Format(time.RFC3339), client: c}, nil
+	return c.HydrateRepo(HydrateRepoOptions{
+		ID:            repoID,
+		DefaultBranch: resolvedDefaultBranch,
+		CreatedAt:     time.Now().UTC().Format(time.RFC3339),
+	})
 }
 
 // ListRepos lists repositories for the org.
@@ -254,7 +258,30 @@ func (c *Client) FindOne(ctx context.Context, options FindOneOptions) (*Repo, er
 	if defaultBranch == "" {
 		defaultBranch = "main"
 	}
-	return &Repo{ID: options.ID, DefaultBranch: defaultBranch, CreatedAt: payload.CreatedAt, client: c}, nil
+	return c.HydrateRepo(HydrateRepoOptions{
+		ID:            options.ID,
+		DefaultBranch: defaultBranch,
+		CreatedAt:     payload.CreatedAt,
+	})
+}
+
+// HydrateRepo creates a repo handle from known metadata without making an HTTP request.
+func (c *Client) HydrateRepo(options HydrateRepoOptions) (*Repo, error) {
+	if strings.TrimSpace(options.ID) == "" {
+		return nil, errors.New("hydrateRepo id is required")
+	}
+
+	defaultBranch := options.DefaultBranch
+	if strings.TrimSpace(defaultBranch) == "" {
+		defaultBranch = "main"
+	}
+
+	return &Repo{
+		ID:            options.ID,
+		DefaultBranch: defaultBranch,
+		CreatedAt:     options.CreatedAt,
+		client:        c,
+	}, nil
 }
 
 // DeleteRepo deletes a repository by ID.

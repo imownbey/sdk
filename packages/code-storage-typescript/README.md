@@ -72,6 +72,22 @@ if (foundRepo) {
 }
 ```
 
+### Hydrating a Repository Without a Request
+
+If you already know the repo metadata, you can construct a `Repo` directly:
+
+```typescript
+const repo = store.hydrateRepo({
+  id: 'repo-id',
+  defaultBranch: 'main',
+  createdAt: '2024-06-15T12:00:00Z',
+});
+
+// No HTTP request is made by hydrateRepo()
+const url = await repo.getRemoteURL();
+console.log(url);
+```
+
 ### Grep
 
 ```typescript
@@ -363,6 +379,7 @@ class GitStorage {
   constructor(options: GitStorageOptions);
   async createRepo(options?: CreateRepoOptions): Promise<Repo>;
   async findOne(options: FindOneOptions): Promise<Repo | null>;
+  hydrateRepo(options: HydrateRepoOptions): Repo;
   getConfig(): GitStorageOptions;
 }
 ```
@@ -398,6 +415,12 @@ interface CreateRepoOptions {
 
 interface FindOneOptions {
   id: string; // Repository ID to find
+}
+
+interface HydrateRepoOptions {
+  id: string; // Repository ID
+  defaultBranch?: string; // Defaults to "main"
+  createdAt?: string; // Defaults to ""
 }
 
 interface Repo {

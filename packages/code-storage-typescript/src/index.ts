@@ -62,6 +62,7 @@ import type {
   GetNoteResult,
   GetRemoteURLOptions,
   GitStorageOptions,
+  HydrateRepoOptions,
   GrepFileMatch,
   GrepLine,
   GrepOptions,
@@ -1393,13 +1394,11 @@ export class GitStorage {
       throw new Error('Repository already exists');
     }
 
-    return new RepoImpl(
-      repoId,
-      resolvedDefaultBranch ?? 'main',
-      new Date().toISOString(),
-      this.options,
-      this.generateJWT.bind(this)
-    );
+    return this.hydrateRepo({
+      id: repoId,
+      defaultBranch: resolvedDefaultBranch ?? 'main',
+      createdAt: new Date().toISOString(),
+    });
   }
 
   /**
@@ -1448,13 +1447,33 @@ export class GitStorage {
     if (resp.status === 404) {
       return null;
     }
-    const body = (await resp.json()) as { default_branch?: string; created_at?: string };
+
+    const body = (await resp.json()) as {
+      default_branch?: string;
+      created_at?: string;
+    };
     const defaultBranch = body.default_branch ?? 'main';
     const createdAt = body.created_at ?? '';
-    return new RepoImpl(
-      options.id,
+
+    return this.hydrateRepo({
+      id: options.id,
       defaultBranch,
       createdAt,
+    });
+  }
+
+  /**
+   * Create a Repo handle from known metadata without making an HTTP request.
+   */
+  hydrateRepo(options: HydrateRepoOptions): Repo {
+    if (!options || typeof options.id !== 'string' || options.id.trim() === '') {
+      throw new Error('hydrateRepo requires a non-empty repository id.');
+    }
+
+    return new RepoImpl(
+      options.id,
+      options.defaultBranch ?? 'main',
+      options.createdAt ?? '',
       this.options,
       this.generateJWT.bind(this)
     );

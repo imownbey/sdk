@@ -396,6 +396,76 @@ func TestFindOneCreatedAtMissing(t *testing.T) {
 	}
 }
 
+func TestHydrateRepoNoHTTPRequest(t *testing.T) {
+	client, err := NewClient(Options{Name: "acme", Key: testKey, StorageBaseURL: "acme.code.storage"})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+
+	repo, err := client.HydrateRepo(HydrateRepoOptions{
+		ID:            "known-repo-id",
+		DefaultBranch: "develop",
+		CreatedAt:     "2024-06-15T12:00:00Z",
+	})
+	if err != nil {
+		t.Fatalf("hydrate repo error: %v", err)
+	}
+
+	if repo.ID != "known-repo-id" {
+		t.Fatalf("expected repo id known-repo-id, got %s", repo.ID)
+	}
+	if repo.DefaultBranch != "develop" {
+		t.Fatalf("expected default branch develop, got %s", repo.DefaultBranch)
+	}
+	if repo.CreatedAt != "2024-06-15T12:00:00Z" {
+		t.Fatalf("expected createdAt 2024-06-15T12:00:00Z, got %s", repo.CreatedAt)
+	}
+
+	remote, err := repo.RemoteURL(nil, RemoteURLOptions{Permissions: []Permission{PermissionGitRead}})
+	if err != nil {
+		t.Fatalf("remote url error: %v", err)
+	}
+	if !strings.Contains(remote, "@acme.code.storage/known-repo-id.git") {
+		t.Fatalf("unexpected remote url: %s", remote)
+	}
+}
+
+func TestHydrateRepoDefaults(t *testing.T) {
+	client, err := NewClient(Options{Name: "acme", Key: testKey, StorageBaseURL: "acme.code.storage"})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+
+	repo, err := client.HydrateRepo(HydrateRepoOptions{ID: "known-repo-id"})
+	if err != nil {
+		t.Fatalf("hydrate repo error: %v", err)
+	}
+
+	if repo.DefaultBranch != "main" {
+		t.Fatalf("expected default branch main, got %s", repo.DefaultBranch)
+	}
+	if repo.CreatedAt != "" {
+		t.Fatalf("expected empty createdAt, got %s", repo.CreatedAt)
+	}
+}
+
+func TestHydrateRepoRequiresID(t *testing.T) {
+	client, err := NewClient(Options{Name: "acme", Key: testKey})
+	if err != nil {
+		t.Fatalf("client error: %v", err)
+	}
+
+	_, err = client.HydrateRepo(HydrateRepoOptions{})
+	if err == nil || !strings.Contains(err.Error(), "hydrateRepo id is required") {
+		t.Fatalf("expected hydrateRepo id is required error, got %v", err)
+	}
+
+	_, err = client.HydrateRepo(HydrateRepoOptions{ID: "   "})
+	if err == nil || !strings.Contains(err.Error(), "hydrateRepo id is required") {
+		t.Fatalf("expected hydrateRepo id is required error for whitespace id, got %v", err)
+	}
+}
+
 func TestCreateRepoCreatedAt(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
