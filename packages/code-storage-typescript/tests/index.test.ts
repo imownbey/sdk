@@ -870,6 +870,50 @@ describe('GitStorage', () => {
     });
   });
 
+  describe('repo', () => {
+    it('should create repo metadata without making HTTP requests', async () => {
+      const store = new GitStorage({ name: 'v0', key });
+
+      const repo = store.repo({
+        id: 'known-repo-id',
+        defaultBranch: 'develop',
+        createdAt: '2024-06-15T12:00:00Z',
+      });
+
+      expect(repo.id).toBe('known-repo-id');
+      expect(repo.defaultBranch).toBe('develop');
+      expect(repo.createdAt).toBe('2024-06-15T12:00:00Z');
+      expect(mockFetch).not.toHaveBeenCalled();
+
+      const url = await repo.getRemoteURL({ permissions: ['git:read'] });
+      expect(url).toMatch(
+        /^https:\/\/t:.+@v0\.3p\.pierre\.rip\/known-repo-id\.git$/
+      );
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should default repo metadata fields when omitted', () => {
+      const store = new GitStorage({ name: 'v0', key });
+      const repo = store.repo({ id: 'known-repo-id' });
+
+      expect(repo.id).toBe('known-repo-id');
+      expect(repo.defaultBranch).toBe('main');
+      expect(repo.createdAt).toBe('');
+    });
+
+    it('should reject repo when id is empty', () => {
+      const store = new GitStorage({ name: 'v0', key });
+
+      expect(() => store.repo({ id: '' })).toThrow(
+        'repo requires a non-empty repository id.'
+      );
+      expect(() => store.repo({ id: '   ' })).toThrow(
+        'repo requires a non-empty repository id.'
+      );
+    });
+
+  });
+
   describe('findOne', () => {
     it('should return a repo with getRemoteURL function when found', async () => {
       const store = new GitStorage({ name: 'v0', key });

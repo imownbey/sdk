@@ -84,6 +84,12 @@ export interface FindOneOptions {
   id: string;
 }
 
+export interface RepoOptions {
+  id: string;
+  defaultBranch?: string;
+  createdAt?: string;
+}
+
 export type SupportedRepoProvider = 'github';
 
 export interface PublicGitHubBaseRepoAuth {

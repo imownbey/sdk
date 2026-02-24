@@ -77,6 +77,28 @@ fmt.Println(result.CommitSHA)
 
 TTL fields use `time.Duration` values (for example `time.Hour`).
 
+### Hydrate a repo without an API request
+
+If you already know repo metadata, you can create a `Repo` handle directly:
+
+```go
+repo, err := client.Repo(storage.RepoOptions{
+	ID:            "repo-id",
+	DefaultBranch: "main",
+	CreatedAt:     "2024-06-15T12:00:00Z",
+})
+if err != nil {
+	log.Fatal(err)
+}
+
+url, err := repo.RemoteURL(context.Background(), storage.RemoteURLOptions{})
+if err != nil {
+	log.Fatal(err)
+}
+
+fmt.Println(url)
+```
+
 ### Sync from a public GitHub base repository
 
 ```go

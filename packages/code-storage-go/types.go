@@ -46,6 +46,13 @@ type FindOneOptions struct {
 	ID string
 }
 
+// RepoOptions creates a repository handle from known metadata.
+type RepoOptions struct {
+	ID            string
+	DefaultBranch string
+	CreatedAt     string
+}
+
 // SupportedRepoProvider lists base repo providers.
 type SupportedRepoProvider string
 
