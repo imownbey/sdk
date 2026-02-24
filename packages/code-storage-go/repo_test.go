@@ -76,6 +76,9 @@ func TestListFilesEphemeral(t *testing.T) {
 
 func TestListFilesWithMetadataEphemeral(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/files/metadata" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		q := r.URL.Query()
 		if q.Get("ref") != "feature/demo" || q.Get("ephemeral") != "true" {
 			t.Fatalf("unexpected query: %s", r.URL.RawQuery)
@@ -382,6 +385,9 @@ func TestListFilesTTL(t *testing.T) {
 
 func TestListFilesWithMetadataTTL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/repos/files/metadata" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		claims := parseJWTFromToken(t, token)
 		exp := int64(claims["exp"].(float64))
