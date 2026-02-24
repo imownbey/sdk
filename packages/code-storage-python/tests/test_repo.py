@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
+import jwt
 import pytest
 
 from pierre_storage import GitStorage
@@ -387,6 +388,42 @@ class TestRepoFileOperations:
             assert result["commits"]["deadbeef"]["date"] == datetime.min.replace(
                 tzinfo=timezone.utc
             )
+
+    @pytest.mark.asyncio
+    async def test_list_files_with_metadata_custom_ttl(
+        self, git_storage_options: dict
+    ) -> None:
+        """Ensure custom TTL propagates to list files with metadata JWT."""
+        storage = GitStorage(git_storage_options)
+        custom_ttl = 900
+
+        create_response = MagicMock()
+        create_response.status_code = 200
+        create_response.is_success = True
+        create_response.json.return_value = {"repo_id": "test-repo"}
+
+        list_response = MagicMock()
+        list_response.status_code = 200
+        list_response.is_success = True
+        list_response.json.return_value = {
+            "files": [],
+            "commits": {},
+            "ref": "main",
+        }
+
+        with patch("httpx.AsyncClient") as mock_client:
+            client_instance = mock_client.return_value.__aenter__.return_value
+            client_instance.post = AsyncMock(return_value=create_response)
+            client_instance.get = AsyncMock(return_value=list_response)
+
+            repo = await storage.create_repo(id="test-repo")
+            await repo.list_files_with_metadata(ttl=custom_ttl)
+
+            _, kwargs = client_instance.get.call_args
+            headers = kwargs["headers"]
+            token = headers["Authorization"].replace("Bearer ", "")
+            payload = jwt.decode(token, options={"verify_signature": False})
+            assert payload["exp"] - payload["iat"] == custom_ttl
 
     @pytest.mark.asyncio
     async def test_grep_posts_body_and_parses_response(self, git_storage_options: dict) -> None:
