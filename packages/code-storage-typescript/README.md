@@ -171,6 +171,7 @@ const archiveResp = await repo.getArchiveStream({
   ref: 'main',
   includeGlobs: ['README.md'],
   excludeGlobs: ['vendor/**'],
+  maxBlobSize: 1024 * 1024, // optional max file size in bytes
   archivePrefix: 'repo/',
 });
 const archiveBytes = new Uint8Array(await archiveResp.arrayBuffer());
@@ -469,6 +470,7 @@ interface ArchiveOptions {
   ref?: string; // Branch, tag, or commit SHA (defaults to default branch)
   includeGlobs?: string[];
   excludeGlobs?: string[];
+  maxBlobSize?: number; // Optional max file size in bytes
   archivePrefix?: string;
   ttl?: number;
 }

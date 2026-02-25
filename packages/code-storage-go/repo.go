@@ -126,12 +126,15 @@ func (r *Repo) ArchiveStream(ctx context.Context, options ArchiveOptions) (*http
 	if len(options.ExcludeGlobs) > 0 {
 		req.ExcludeGlobs = options.ExcludeGlobs
 	}
+	if options.MaxBlobSize != nil {
+		req.MaxBlobSize = options.MaxBlobSize
+	}
 	if prefix := strings.TrimSpace(options.ArchivePrefix); prefix != "" {
 		req.Archive = &archiveOptions{Prefix: prefix}
 	}
 
 	var body interface{}
-	if req.Ref != "" || len(req.IncludeGlobs) > 0 || len(req.ExcludeGlobs) > 0 || req.Archive != nil {
+	if req.Ref != "" || len(req.IncludeGlobs) > 0 || len(req.ExcludeGlobs) > 0 || req.MaxBlobSize != nil || req.Archive != nil {
 		body = req
 	}
 

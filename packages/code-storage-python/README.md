@@ -158,6 +158,7 @@ archive_response = await repo.get_archive_stream(
     ref="main",
     include_globs=["README.md"],
     exclude_globs=["vendor/**"],
+    max_blob_size=1024 * 1024,  # optional max file size in bytes
     archive_prefix="repo/",
 )
 archive_bytes = await archive_response.aread()
@@ -604,6 +605,7 @@ class Repo:
         ref: Optional[str] = None,
         include_globs: Optional[List[str]] = None,
         exclude_globs: Optional[List[str]] = None,
+        max_blob_size: Optional[int] = None,
         archive_prefix: Optional[str] = None,
         ttl: Optional[int] = None,
     ) -> Response: ...

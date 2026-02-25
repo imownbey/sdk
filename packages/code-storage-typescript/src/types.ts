@@ -182,6 +182,7 @@ export interface ArchiveOptions extends GitStorageInvocationOptions {
   ref?: string;
   includeGlobs?: string[];
   excludeGlobs?: string[];
+  maxBlobSize?: number;
   archivePrefix?: string;
 }
 

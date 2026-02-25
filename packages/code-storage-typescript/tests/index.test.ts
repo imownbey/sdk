@@ -354,6 +354,7 @@ describe('GitStorage', () => {
         ref: 'main',
         include_globs: ['README.md'],
         exclude_globs: ['vendor/**'],
+        max_blob_size: 1024,
         archive: { prefix: 'repo/' },
       });
       return Promise.resolve({
@@ -370,6 +371,7 @@ describe('GitStorage', () => {
       ref: 'main',
       includeGlobs: ['README.md'],
       excludeGlobs: ['vendor/**'],
+      maxBlobSize: 1024,
       archivePrefix: 'repo/',
     });
 
