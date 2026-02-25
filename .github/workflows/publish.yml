@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -31,6 +32,9 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9
+
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@^11.5.1
 
       - name: Check npm for current version
         id: check
@@ -59,7 +63,7 @@ jobs:
       - name: Publish to npm
         if: steps.check.outputs.publish == 'true'
         working-directory: packages/code-storage-typescript
-        run: pnpm publish --no-git-checks --access public
+        run: npm publish --access public
 
   publish-python:
     name: Publish Python SDK to PyPI
