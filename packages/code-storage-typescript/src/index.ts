@@ -678,6 +678,9 @@ class RepoImpl implements Repo {
     if (Array.isArray(options.excludeGlobs) && options.excludeGlobs.length > 0) {
       body.exclude_globs = options.excludeGlobs;
     }
+    if (typeof options.maxBlobSize === 'number' && Number.isFinite(options.maxBlobSize)) {
+      body.max_blob_size = options.maxBlobSize;
+    }
     if (typeof options.archivePrefix === 'string') {
       const prefix = options.archivePrefix.trim();
       if (prefix) {

@@ -41,10 +41,12 @@ fmt.Println(url)
 ### Download an archive
 
 ```go
+maxBlobSize := int64(1024 * 1024)
 resp, err := repo.ArchiveStream(context.Background(), storage.ArchiveOptions{
 	Ref:           "main",
 	IncludeGlobs:  []string{"README.md"},
 	ExcludeGlobs:  []string{"vendor/**"},
+	MaxBlobSize:   &maxBlobSize, // optional max file size in bytes
 	ArchivePrefix: "repo/",
 })
 if err != nil {

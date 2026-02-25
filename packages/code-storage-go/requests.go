@@ -83,6 +83,7 @@ type archiveRequest struct {
 	Ref          string          `json:"ref,omitempty"`
 	IncludeGlobs []string        `json:"include_globs,omitempty"`
 	ExcludeGlobs []string        `json:"exclude_globs,omitempty"`
+	MaxBlobSize  *int64          `json:"max_blob_size,omitempty"`
 	Archive      *archiveOptions `json:"archive,omitempty"`
 }
 

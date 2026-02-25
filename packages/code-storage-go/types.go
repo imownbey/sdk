@@ -162,6 +162,7 @@ type ArchiveOptions struct {
 	Ref           string
 	IncludeGlobs  []string
 	ExcludeGlobs  []string
+	MaxBlobSize   *int64
 	ArchivePrefix string
 }
 

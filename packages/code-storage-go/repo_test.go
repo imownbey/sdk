@@ -791,6 +791,9 @@ func TestArchiveStream(t *testing.T) {
 		if len(payload.ExcludeGlobs) != 1 || payload.ExcludeGlobs[0] != "vendor/**" {
 			t.Fatalf("unexpected exclude globs: %v", payload.ExcludeGlobs)
 		}
+		if payload.MaxBlobSize == nil || *payload.MaxBlobSize != 1024 {
+			t.Fatalf("unexpected max blob size: %v", payload.MaxBlobSize)
+		}
 		if payload.Archive == nil || payload.Archive.Prefix != "repo/" {
 			t.Fatalf("unexpected archive prefix")
 		}
@@ -804,11 +807,13 @@ func TestArchiveStream(t *testing.T) {
 		t.Fatalf("client error: %v", err)
 	}
 	repo := &Repo{ID: "repo", DefaultBranch: "main", client: client}
+	maxBlobSize := int64(1024)
 
 	resp, err := repo.ArchiveStream(nil, ArchiveOptions{
 		Ref:           "main",
 		IncludeGlobs:  []string{"README.md"},
 		ExcludeGlobs:  []string{"vendor/**"},
+		MaxBlobSize:   &maxBlobSize,
 		ArchivePrefix: "repo/",
 	})
 	if err != nil {
